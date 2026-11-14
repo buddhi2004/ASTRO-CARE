@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASTRAL-MED | NASA Space Apps Challenge 2026</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛰️</text></svg>">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              950: '#030712',
+              900: '#0B0F19',
+              850: '#111827',
+              800: '#1F2937',
+              700: '#374151'
+            },
+            cyanGlow: '#00F0FF',
+            emeraldGlow: '#10B981',
+            amberAlert: '#F59E0B',
+            redCritical: '#EF4444'
+          },
+          fontFamily: {
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    .hud-border {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+    .hud-border-emerald {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.15), inset 0 0 15px rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #00F0FF;
+    }
+    .body-hotspot {
+      cursor: pointer;
+      transition: all 0.25s ease-in-out;
+    }
+    .body-hotspot:hover {
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+    .nav-tab-active {
+      color: #00F0FF !important;
+      border-bottom: 2px solid #00F0FF;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #planModalContent, #planModalContent * {
+        visibility: visible;
+      }
+      #planModalContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-space-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black">
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION BAR (As requested: Home, Solution, Pricing, Sustainability, About, Contact) -->
+  <!-- ========================================================================= -->
+  <header class="border-b border-slate-800 bg-space-900/95 backdrop-blur sticky top-0 z-40 px-4 py-2.5 transition-colors duration-300" id="mainHeader">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand Logo / Submission Identity -->
+      <div class="flex items-center gap-3">
+        <button onclick="switchPageTab('home')" class="flex items-center gap-2 group text-left">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center font-mono font-bold text-white text-sm shadow-md shadow-cyan-500/20">
+            AM
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-black tracking-wide text-white text-base">ASTRAL-MED</span>
+              <span class="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.2 rounded font-mono font-semibold border border-cyan-800">SpaceApps</span>
+            </div>
+            <span class="text-[10px] font-mono text-cyan-400 block -mt-0.5">Autonomous Astronaut Health</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Main Clickable Navigation Bar -->
+      <nav class="flex items-center gap-1 sm:gap-2 text-sm font-medium">
+        <button onclick="switchPageTab('home')" id="navTab_home" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors nav-tab-active font-mono text-xs sm:text-sm">
+          Home
+        </button>
+        <button onclick="switchPageTab('architecture')" id="navTab_architecture" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors font-mono text-xs sm:text-sm">
+          Architecture
+        </button>
+        <button onclick="switchPageTab('deployment')" id="navTab_deployment" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors font-mono text-xs sm:text-sm">
+          Deployment
+        </button>
+        <button onclick="switchPageTab('impact')" id="navTab_impact" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors font-mono text-xs sm:text-sm">
+          Impact
+        </button>
+        <button onclick="switchPageTab('about')" id="navTab_about" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors font-mono text-xs sm:text-sm">
+          About
+        </button>
+        <button onclick="switchPageTab('contact')" id="navTab_contact" class="px-3 py-1.5 text-slate-300 hover:text-white transition-colors font-mono text-xs sm:text-sm">
+          Contact
+        </button>
+      </nav>
+
+      <!-- Right Fast Controls: Quick Mode Switch & Audio -->
+      <div class="flex items-center gap-2 text-xs font-mono">
+        <!-- Dual Mode Switcher -->
+        <div class="flex items-center bg-space-850 p-1 rounded-xl border border-slate-700 shadow-inner">
+          <button id="toggleModeFlightBtn" onclick="selectMissionMode('flight')" class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all bg-cyan-600 text-white shadow-md shadow-cyan-600/30">
+            <span>🛰️</span>
+            <span>Mode A</span>
+          </button>
+          <button id="toggleModeRehabBtn" onclick="selectMissionMode('rehab')" class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all text-slate-400 hover:text-white">
+            <span>🌍</span>
+            <span>Mode B</span>
+          </button>
+        </div>
+
+        <!-- NASA DONKI Live/Offline Status Badge -->
+        <button onclick="openNasaModal()" class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-cyan-300 transition-colors" title="NASA API DONKI Space Weather Integration">
+          <span id="nasaStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="nasaStatusText">DONKI: OFFLINE-READY</span>
+        </button>
+
+        <!-- Audio Sound Effects Toggle -->
+        <button onclick="toggleAudio()" id="audioToggleBtn" class="px-2 py-1 rounded bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 transition-colors" title="Toggle NASA Telemetry Audio">
+          <span id="audioIcon">🔊</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 1. INITIAL ONBOARDING GATE (MODE SELECTOR) -->
+  <!-- ========================================================================= -->
+  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="bg-space-900 border-2 border-cyan-500/50 rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl shadow-cyan-500/20 relative overflow-hidden">
+      <!-- Glow ambient background -->
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- NASA Space Apps Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center font-mono font-bold text-lg text-white shadow-lg shadow-cyan-500/30">
+            AM
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">NASA SPACE APPS CHALLENGE 2026</span>
+              <span class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-800 font-mono">100% Offline-First</span>
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-white">ASTRAL-MED</h1>
+          </div>
+        </div>
+        <div class="text-right hidden sm:block">
+          <span class="text-xs font-mono text-slate-400">Team Nebula Four</span>
+          <div class="text-[11px] text-cyan-400 font-mono">Autonomous Astronaut Health</div>
+        </div>
+      </div>
+
+      <!-- Mission Engineering Roster Pill -->
+      <div class="bg-space-850/80 border border-slate-800 rounded-xl p-3 mb-5">
+        <div class="text-[11px] uppercase tracking-wider text-slate-400 font-mono mb-1.5 flex items-center justify-between">
+          <span>MISSION ENGINEERING ROSTER</span>
+          <span class="text-emerald-400">4 ACTIVE SPECIALISTS</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+          <div class="bg-space-900/90 p-2 rounded border border-slate-800 cursor-pointer hover:border-cyan-500 transition-colors" onclick="closeOnboardingModal(); switchPageTab('about');">
+            <span class="text-slate-400 block text-[10px]">AI / ML Engineer</span>
+            <span class="text-cyan-300 font-bold">Udamgie</span>
+          </div>
+          <div class="bg-space-900/90 p-2 rounded border border-slate-800 cursor-pointer hover:border-cyan-500 transition-colors" onclick="closeOnboardingModal(); switchPageTab('about');">
+            <span class="text-slate-400 block text-[10px]">Frontend Dev</span>
+            <span class="text-cyan-300 font-bold">Rashmi</span>
+          </div>
+          <div class="bg-space-900/90 p-2 rounded border border-slate-800 cursor-pointer hover:border-cyan-500 transition-colors" onclick="closeOnboardingModal(); switchPageTab('about');">
+            <span class="text-slate-400 block text-[10px]">Delivery Lead</span>
+            <span class="text-cyan-300 font-bold">Buddhiprabha</span>
+          </div>
+          <div class="bg-space-900/90 p-2 rounded border border-slate-800 cursor-pointer hover:border-cyan-500 transition-colors" onclick="closeOnboardingModal(); switchPageTab('about');">
+            <span class="text-slate-400 block text-[10px]">Web Developer</span>
+            <span class="text-cyan-300 font-bold">Vidasni</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gate Prompt -->
+      <div class="mb-5 text-center">
+        <h2 class="text-xl md:text-2xl font-bold text-white mb-1.5">What is your current mission status?</h2>
+        <p class="text-xs text-slate-400">Select the operational phase to configure real-time clinical triage engines and countermeasure protocols.</p>
+      </div>
+
+      <!-- The Two Main Choices (Generates Instant Plan When Clicked!) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Option A: Currently On Mission -->
+        <button onclick="selectMissionMode('flight')" class="group text-left p-5 rounded-xl border-2 border-cyan-500/40 hover:border-cyan-400 bg-space-850/70 hover:bg-space-800 transition-all hover:scale-[1.02] relative flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-12 h-12 rounded-lg bg-cyan-950 border border-cyan-600 flex items-center justify-center text-2xl text-cyan-300 group-hover:scale-110 transition-transform">
+              🛰️
+            </div>
+            <span class="text-xs font-mono font-bold px-2 py-0.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded">
+              MODE A
+            </span>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">Currently On Mission</h3>
+            <p class="text-xs text-cyan-400/90 font-mono mb-2">In-Flight / Lunar / Mars</p>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Launches the In-Flight Medical Co-Pilot. Generates the autonomous daily countermeasure & clinical flight plan.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center text-xs font-mono text-cyan-300 font-semibold">
+            <span>Generate In-Flight Plan &rarr;</span>
+          </div>
+        </button>
+
+        <!-- Option B: Already Landed -->
+        <button onclick="selectMissionMode('rehab')" class="group text-left p-5 rounded-xl border-2 border-emerald-500/40 hover:border-emerald-400 bg-space-850/70 hover:bg-space-800 transition-all hover:scale-[1.02] relative flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-12 h-12 rounded-lg bg-emerald-950 border border-emerald-600 flex items-center justify-center text-2xl text-emerald-300 group-hover:scale-110 transition-transform">
+              🌍
+            </div>
+            <span class="text-xs font-mono font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">
+              MODE B
+            </span>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">Already Landed on Earth</h3>
+            <p class="text-xs text-emerald-400/90 font-mono mb-2">Post-Flight Recovery (R+0 to R+45)</p>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Launches the AI Physiotherapist & Reconditioning Trainer. Generates the personalized 45-day Earth adaptation plan.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center text-xs font-mono text-emerald-300 font-semibold">
+            <span>Generate 45-Day Rehab Plan &rarr;</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="mt-5 text-center text-xs text-slate-500 font-mono">
+        💡 You can freely toggle between both modes anytime via the quick switch in the top navigation bar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MISSION PLAN GENERATION MODAL (POPUP WHEN MODE A OR B IS CLICKED) -->
+  <!-- ========================================================================= -->
+  <div id="planGeneratedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 hidden transition-all duration-300">
+    <div id="planModalContent" class="bg-space-900 border-2 border-cyan-500/70 rounded-2xl max-w-3xl w-full p-6 md:p-8 shadow-2xl shadow-cyan-500/30 relative max-h-[90vh] overflow-y-auto custom-scroll">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div class="flex items-center gap-3">
+          <div id="planModalIconBadge" class="w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500 flex items-center justify-center text-2xl text-cyan-300 shadow">
+            🛰️
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="planModalTypeTag" class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">MODE A PLAN GENERATED</span>
+              <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800 font-mono">Prescription Active</span>
+            </div>
+            <h2 id="planModalTitle" class="text-xl md:text-2xl font-black text-white">Autonomous In-Flight Countermeasure & Medical Plan</h2>
+          </div>
+        </div>
+        <button onclick="closePlanModal()" class="text-slate-400 hover:text-white text-2xl p-1">&times;</button>
+      </div>
+
+      <!-- Dynamic Plan Content Container -->
+      <div id="planModalBody" class="space-y-4 text-xs">
+        <!-- Dynamically injected based on Mode A or Mode B -->
+      </div>
+
+      <!-- Plan Actions -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800 mt-6">
+        <div class="text-xs text-slate-400 font-mono">
+          <span>Validated by NASA JSC Medical Directive standards (100% Offline)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-space-850 hover:bg-space-800 text-slate-200 border border-slate-700 font-mono font-bold text-xs flex items-center gap-1.5">
+            <span>🖨️</span>
+            <span>Print / Save PDF</span>
+          </button>
+          <button onclick="closePlanModal()" id="planModalProceedBtn" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono font-bold text-xs shadow-lg shadow-cyan-600/30 flex items-center gap-2">
+            <span>Proceed to Workspace &rarr;</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 1: HOME (DUAL-MODE MISSION OPERATIONS WORKSPACE) -->
+  <!-- ========================================================================= -->
+  <main id="pageTab_home" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- Active Mission Mode Banner -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-space-900 border border-slate-800 rounded-xl p-3 px-4 text-xs font-mono">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-400">Current Mission Mode:</span>
+        <span id="activeModeBannerText" class="font-bold text-cyan-300 px-2.5 py-0.5 rounded bg-cyan-950 border border-cyan-800">
+          🛰️ MODE A: IN-FLIGHT MEDICAL CO-PILOT
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openPlanForCurrentMode()" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1">
+          <span>📋</span>
+          <span>View Prescribed Mission Plan</span>
+        </button>
+        <button onclick="openOnboardingModal()" class="text-xs font-mono text-slate-400 hover:text-white bg-space-850 px-2.5 py-1 rounded border border-slate-700">
+          Switch Mission Phase
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODE A CONTAINER: IN-FLIGHT MEDICAL CO-PILOT -->
+    <!-- ======================================================================= -->
+    <div id="modeAContainer" class="space-y-6 transition-opacity duration-300">
+      
+      <!-- Top Mission Control Status Strip -->
+      <div class="hud-border rounded-xl bg-space-900/90 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex items-center justify-center text-cyan-400 text-2xl font-mono">
+              🩺
+            </div>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-bold text-white">In-Flight Autonomous Medical Co-Pilot</h2>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                100% LOCAL RULE-ENGINE
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Continuous astronaut clinical telemetry, SANS/IJV risk assessment, and non-doctor ultrasound guidance.</p>
+          </div>
+        </div>
+
+        <!-- Environment Selector -->
+        <div class="flex items-center gap-2 bg-space-950 p-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+          <span class="text-slate-400 pl-1 hidden lg:inline">Environment:</span>
+          <select id="envSelector" onchange="updateEnvironment(this.value)" class="bg-space-900 text-cyan-300 border border-slate-700 rounded px-2.5 py-1 focus:outline-none focus:border-cyan-400 font-bold">
+            <option value="microgravity">Microgravity (Spacecraft/ISS - 0.0g)</option>
+            <option value="partial_gravity_lunar">Partial Gravity (Lunar South Pole - 0.16g)</option>
+            <option value="partial_gravity_mars">Partial Gravity (Mars Base - 0.38g)</option>
+            <option value="eva_rover">EVA / Surface Rover (Suit Pressure)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Environment Impact Notice Bar -->
+      <div id="envNoticeBar" class="bg-cyan-950/40 border border-cyan-800/60 rounded-lg p-3 text-xs font-mono flex items-center justify-between text-cyan-200">
+        <div class="flex items-center gap-2">
+          <span>⚡</span>
+          <span id="envNoticeText">Active Environment: Microgravity (0.0g) &mdash; Cephalad fluid shift multiplier: 1.45x | Daily atrophy baseline: 0.08%</span>
+        </div>
+        <span class="text-[11px] text-slate-400">Offline Rules Active</span>
+      </div>
+
+      <!-- Main In-Flight Workspace: 2-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Interactive Digital Twin Body Map (5 Cols) -->
+        <div class="lg:col-span-5 bg-space-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                  <span>Interactive "Digital Twin" Body Map</span>
+                  <span class="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">Click Hotspot</span>
+                </h3>
+                <p class="text-xs text-slate-400">Click any organ hotspot to trigger clinical exam & triage drawer.</p>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] font-mono text-cyan-400" id="activeHotspotBadge">Selected: Cardiovascular</span>
+              </div>
+            </div>
+
+            <!-- SVG Human Silhouette with Glowing Triage Hotspots -->
+            <div class="relative w-full aspect-[4/5] max-h-[460px] mx-auto flex items-center justify-center p-2 bg-space-950/60 rounded-xl border border-slate-800/80">
+              <svg viewBox="0 0 300 420" class="w-full h-full max-w-[280px]">
+                <defs>
+                  <!-- Glow Filters -->
+                  <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="glowAmber" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                <!-- Human Body Silhouette -->
+                <path d="M 150 35 
+                         C 138 35, 130 45, 130 60 
+                         C 130 75, 138 85, 142 90
+                         L 125 105 L 90 120 L 70 195 L 85 200 L 105 140 L 122 135
+                         L 120 230 L 105 320 L 100 390 L 120 395 L 138 320 L 145 250
+                         L 155 250 L 162 320 L 180 395 L 200 390 L 195 320 L 180 230
+                         L 178 135 L 195 140 L 215 200 L 230 195 L 210 120 L 175 105
+                         L 158 90
+                         C 162 85, 170 75, 170 60
+                         C 170 45, 162 35, 150 35 Z" 
+                      fill="#1E293B" stroke="#334155" stroke-width="2" />
+
+                <!-- Anatomical Subsystem Hotspot: 1. Mood & Sleep (Brain / Cranium) -->
+                <g class="body-hotspot" onclick="selectSubsystem('mood_sleep')" id="hotspot_mood_sleep">
+                  <circle cx="150" cy="55" r="16" fill="rgba(16,185,129,0.2)" stroke="#10B981" stroke-width="2" id="circle_mood_sleep" />
+                  <circle cx="150" cy="55" r="5" fill="#10B981" />
+                  <text x="150" y="58" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">🧠</text>
+                  <text x="210" y="58" font-size="9" font-family="monospace" fill="#94A3B8">Mood / Sleep</text>
+                  <line x1="166" y1="55" x2="205" y2="55" stroke="#475569" stroke-dasharray="2,2" />
+                </g>
+
+                <!-- Anatomical Subsystem Hotspot: 2. Ocular & SANS (Eyes / Optic Sheath) -->
+                <g class="body-hotspot" onclick="selectSubsystem('ocular_sans')" id="hotspot_ocular_sans">
+                  <circle cx="150" cy="72" r="13" fill="rgba(245,158,11,0.2)" stroke="#F59E0B" stroke-width="2" id="circle_ocular_sans" />
+                  <circle cx="150" cy="72" r="4" fill="#F59E0B" />
+                  <text x="150" y="75" font-size="7" font-weight="bold" fill="#ffffff" text-anchor="middle">👁️</text>
+                  <text x="210" y="76" font-size="9" font-family="monospace" fill="#F59E0B">Ocular / SANS</text>
+                  <line x1="163" y1="72" x2="205" y2="76" stroke="#F59E0B" stroke-dasharray="2,2" />
+                </g>
+
+                <!-- Anatomical Subsystem Hotspot: 3. Cardiovascular & IJV (Neck / Jugular) -->
+                <g class="body-hotspot" onclick="selectSubsystem('cardiovascular')" id="hotspot_cardiovascular">
+                  <circle cx="150" cy="115" r="18" fill="rgba(0,240,255,0.25)" stroke="#00F0FF" stroke-width="2.5" id="circle_cardiovascular" />
+                  <circle cx="150" cy="115" r="6" fill="#00F0FF" />
+                  <text x="150" y="118" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">🫀</text>
+                  <text x="80" y="118" font-size="9" font-family="monospace" fill="#00F0FF" text-anchor="end">IJV / Cardio</text>
+                  <line x1="132" y1="115" x2="85" y2="115" stroke="#00F0FF" stroke-dasharray="2,2" />
+                </g>
+
+                <!-- Anatomical Subsystem Hotspot: 4. Musculoskeletal (Spine, Hips & Calves) -->
+                <g class="body-hotspot" onclick="selectSubsystem('musculoskeletal')" id="hotspot_musculoskeletal">
+                  <rect x="146" y="145" width="8" height="60" rx="3" fill="#10B981" opacity="0.6" />
+                  <circle cx="118" cy="340" r="14" fill="rgba(16,185,129,0.2)" stroke="#10B981" stroke-width="2" id="circle_musculoskeletal" />
+                  <circle cx="182" cy="340" r="14" fill="rgba(16,185,129,0.2)" stroke="#10B981" stroke-width="2" />
+                  <circle cx="118" cy="340" r="4" fill="#10B981" />
+                  <circle cx="182" cy="340" r="4" fill="#10B981" />
+                  <text x="150" y="343" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">🦴</text>
+                  <text x="215" y="343" font-size="9" font-family="monospace" fill="#94A3B8">Musculoskeletal</text>
+                  <line x1="196" y1="340" x2="210" y2="343" stroke="#475569" stroke-dasharray="2,2" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Hotspot Triage Status Legend -->
+            <div class="mt-4 grid grid-cols-4 gap-2 text-center text-xs font-mono">
+              <div class="p-2 rounded bg-space-850 border border-slate-800">
+                <span class="block text-[10px] text-slate-400">IJV Cardio</span>
+                <span id="legendCardio" class="font-bold text-cyan-400">AMBER</span>
+              </div>
+              <div class="p-2 rounded bg-space-850 border border-slate-800">
+                <span class="block text-[10px] text-slate-400">Ocular SANS</span>
+                <span id="legendOcular" class="font-bold text-amberAlert">AMBER</span>
+              </div>
+              <div class="p-2 rounded bg-space-850 border border-slate-800">
+                <span class="block text-[10px] text-slate-400">Musculo</span>
+                <span id="legendMusculo" class="font-bold text-emeraldGlow">GREEN</span>
+              </div>
+              <div class="p-2 rounded bg-space-850 border border-slate-800">
+                <span class="block text-[10px] text-slate-400">Sleep/Mood</span>
+                <span id="legendSleep" class="font-bold text-emeraldGlow">GREEN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Telemetry Reset -->
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span>NASA Medical Directive 44-A Compliant</span>
+            <button onclick="resetInFlightTelemetry()" class="text-cyan-400 hover:underline font-mono">
+              Reset Nominal Baseline
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Self-Exam & Triage Drawer + In-Flight Daily Logging (7 Cols) -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- Dynamic Self-Exam & Clinical Triage Drawer -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold" id="examCategoryTag">VASCULAR PROTOCOL</span>
+                <h3 class="text-base font-bold text-white flex items-center gap-2" id="examTitle">
+                  Internal Jugular Vein (IJV) Ultrasound Self-Exam
+                </h3>
+              </div>
+              <div id="triageBadge" class="px-3 py-1 rounded text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50">
+                STATUS: AMBER
+              </div>
+            </div>
+
+            <!-- Plain-Language Guide for Non-Doctors -->
+            <div class="bg-space-850/90 border border-slate-800 rounded-xl p-3.5 mb-4 text-xs">
+              <div class="flex items-start gap-2.5">
+                <div class="text-lg">🧭</div>
+                <div>
+                  <h4 class="font-bold text-cyan-300 font-mono mb-0.5">Non-Physician Guidance & Probe Placement:</h4>
+                  <p class="text-slate-300 leading-relaxed" id="examPlacementGuide">
+                    Apply acoustic coupling gel to Butterfly iQ+ vascular probe. Locate high anterior cervical triangle beside larynx. Position probe transverse with notch pointing to astronaut's right ear. Apply minimal pressure to prevent collapsing the engorged jugular vein.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Diagnostic Input Sliders & Measurements -->
+            <div class="space-y-3.5 mb-5" id="metricInputsContainer">
+              <!-- Dynamically populated per subsystem -->
+            </div>
+
+            <!-- Action Buttons: Run Triage + Presets -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800">
+              <div class="flex items-center gap-2">
+                <button onclick="loadSampleCase('nominal')" class="px-2.5 py-1 text-xs font-mono bg-space-850 hover:bg-space-800 text-slate-300 rounded border border-slate-700">
+                  Nominal
+                </button>
+                <button onclick="loadSampleCase('amber')" class="px-2.5 py-1 text-xs font-mono bg-space-850 hover:bg-space-800 text-amber-300 rounded border border-amber-800">
+                  Precaution
+                </button>
+                <button onclick="loadSampleCase('critical')" class="px-2.5 py-1 text-xs font-mono bg-space-850 hover:bg-space-800 text-rose-300 rounded border border-rose-800">
+                  Thrombosis/SANS
+                </button>
+              </div>
+
+              <button onclick="runOfflineTriage()" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-mono text-xs shadow-lg shadow-cyan-600/30 flex items-center gap-2">
+                <span>⚡</span>
+                <span>EVALUATE LOCAL TRIAGE</span>
+              </button>
+            </div>
+
+            <!-- Triage Results Advisory Box -->
+            <div id="triageResultBox" class="mt-4 p-4 rounded-xl border bg-amber-950/20 border-amber-800/80 text-xs">
+              <div class="flex items-center justify-between mb-1.5 font-mono">
+                <span class="font-bold text-amber-300" id="resultTitle">Moderate Cephalad Venous Engorgement</span>
+                <span class="text-[10px] text-amber-400 px-2 py-0.5 rounded bg-amber-950 border border-amber-800 font-bold" id="resultPriority">ROUTINE_FLIGHT_SURGEON</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed mb-2" id="resultAction">
+                Schedule daily 30-min Lower Body Negative Pressure (LBNP) chuff session at -35 mmHg. Restrict dietary sodium to 1800 mg. Re-scan IJV Doppler flow in 24 hours.
+              </p>
+              <div class="text-[11px] text-slate-400 font-mono flex items-center justify-between pt-1 border-t border-amber-900/40">
+                <span>Rule Engine: 100% Offline Local JSON</span>
+                <span id="resultTimestamp">Evaluated: Just Now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- In-Flight Prediction & Daily Metrics Logger -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Daily In-Flight Biomechanical & Sleep Logger</span>
+                  <span class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded font-mono border border-cyan-800">Handover Bridge</span>
+                </h3>
+                <p class="text-xs text-slate-400">Metrics saved here automatically calibrate post-flight Earth recovery in Mode B.</p>
+              </div>
+              <span class="text-xs font-mono text-emerald-400" id="logCountBadge">7 Days Logged</span>
+            </div>
+
+            <!-- Logger Form Controls -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-xs font-mono">
+              <div>
+                <label class="block text-slate-400 mb-1 text-[11px]">ARED Workload (%)</label>
+                <input type="number" id="logAredInput" value="94" min="40" max="120" class="w-full bg-space-850 text-white border border-slate-700 rounded px-2.5 py-1.5 focus:border-cyan-400">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1 text-[11px]">Missed Workouts (7d)</label>
+                <input type="number" id="logMissedInput" value="1" min="0" max="10" class="w-full bg-space-850 text-white border border-slate-700 rounded px-2.5 py-1.5 focus:border-cyan-400">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1 text-[11px]">Fluid Shift (1-5)</label>
+                <input type="number" id="logFluidShiftInput" value="2" min="1" max="5" class="w-full bg-space-850 text-white border border-slate-700 rounded px-2.5 py-1.5 focus:border-cyan-400">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1 text-[11px]">Sleep Quality (hrs)</label>
+                <input type="number" id="logSleepInput" value="7.4" step="0.1" min="3" max="12" class="w-full bg-space-850 text-white border border-slate-700 rounded px-2.5 py-1.5 focus:border-cyan-400">
+              </div>
+            </div>
+
+            <!-- Log to Storage Button -->
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-slate-400 font-mono">Auto-syncs to browser localStorage</span>
+              <button onclick="commitInFlightLog()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
+                <span>💾</span>
+                <span>SAVE LOG TO FLIGHT ARCHIVE</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- NASA Open API (DONKI) Space Weather Radar & Radiation Risk Panel -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></div>
+                <h3 class="text-sm font-bold text-white">NASA Open API (api.nasa.gov) Space Weather Radar</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="donkiDataSourceTag" class="text-[10px] font-mono px-2 py-0.5 rounded bg-space-850 text-slate-300 border border-slate-700">
+                  SOURCE: OFFLINE SIMULATION
+                </span>
+                <button onclick="syncNasaDonkiLive()" class="text-xs font-mono text-cyan-400 hover:underline">
+                  Refresh Live
+                </button>
+              </div>
+            </div>
+
+            <!-- Space Weather Events List -->
+            <div id="donkiEventsList" class="space-y-2.5 text-xs font-mono">
+              <!-- Dynamically populated with live or offline CME/FLR events -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- MODE B CONTAINER: ALREADY LANDED ON EARTH (POST-FLIGHT PHYSIO & REHAB) -->
+    <!-- ======================================================================= -->
+    <div id="modeBContainer" class="space-y-6 hidden transition-opacity duration-300">
+      
+      <!-- Top Clinical Earth Medical Strip -->
+      <div class="hud-border-emerald rounded-xl bg-space-900/90 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <div class="w-12 h-12 rounded-xl bg-emerald-950/80 border border-emerald-500/60 flex items-center justify-center text-emerald-400 text-2xl font-mono">
+              🏃‍♂️
+            </div>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-bold text-white">AI Physiotherapist & 45-Day Reconditioning Coach</h2>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                NASA JSC APTP PROTOCOL
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Earth gravity (1.0g) re-adaptation, orthostatic syncope prevention, neurovestibular calibration, and osteogenic loading.</p>
+          </div>
+        </div>
+
+        <!-- Mission Duration Preset & Handover Selector -->
+        <div class="flex items-center gap-2 bg-space-950 p-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+          <span class="text-slate-400 pl-1">Mission Handover:</span>
+          <select id="missionPresetSelector" onchange="updateMissionPreset(this.value)" class="bg-space-900 text-emerald-300 border border-slate-700 rounded px-2.5 py-1 focus:outline-none focus:border-emerald-400 font-bold">
+            <option value="standard_iss_180d">Standard ISS (180 Days / 6 Months)</option>
+            <option value="short_mission_30d">Artemis Gateway (30 Days)</option>
+            <option value="mars_transit_365d">Deep Space Mars Transit (365 Days / 1 Year)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Handover Impact Status Bar -->
+      <div class="bg-emerald-950/30 border border-emerald-800/60 rounded-xl p-4 text-xs font-mono">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3 border-b border-emerald-900/40 pb-2">
+          <div class="flex items-center gap-2 text-emerald-300 font-bold">
+            <span>📥</span>
+            <span id="handoverTitle">Automatic Handover Imported from In-Flight Archive</span>
+          </div>
+          <span class="text-slate-400" id="handoverSubtitle">Duration: 180 Days | Avg ARED Compliance: 94%</span>
+        </div>
+
+        <!-- 4 Key Calculated Deconditioning Risk Scores -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-space-900/90 p-3 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Predicted Muscle Atrophy</span>
+            <div class="flex items-baseline gap-1.5 mt-1">
+              <span class="text-xl font-bold text-rose-400" id="statMuscleAtrophy">17.8%</span>
+              <span class="text-[10px] text-rose-400 font-bold px-1.5 py-0.2 bg-rose-950 rounded">MODERATE</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block">Soleus & Lumbar Extensors</span>
+          </div>
+
+          <div class="bg-space-900/90 p-3 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Bone Mineral Density Loss</span>
+            <div class="flex items-baseline gap-1.5 mt-1">
+              <span class="text-xl font-bold text-amberAlert" id="statBoneLoss">5.4%</span>
+              <span class="text-[10px] text-slate-400">BMD deficit</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block">Femoral Neck & Calcaneus</span>
+          </div>
+
+          <div class="bg-space-900/90 p-3 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Orthostatic Intolerance Risk</span>
+            <div class="flex items-baseline gap-1.5 mt-1">
+              <span class="text-xl font-bold text-amberAlert" id="statOrthoRisk">72 / 100</span>
+              <span class="text-[10px] text-amber-400 font-bold px-1.5 py-0.2 bg-amber-950 rounded">POTS RISK</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block">Cephalad Fluid Loss Deficit</span>
+          </div>
+
+          <div class="bg-space-900/90 p-3 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block text-[11px]">Vestibular Ataxia Score</span>
+            <div class="flex items-baseline gap-1.5 mt-1">
+              <span class="text-xl font-bold text-rose-400" id="statVestibularScore">81 / 100</span>
+              <span class="text-[10px] text-rose-400 font-bold px-1.5 py-0.2 bg-rose-950 rounded">HIGH SWAY</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block">Otolith-Ocular Lag</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 45-Day Interactive Timeline Slider Bar -->
+      <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">RECONDITIONING TIMELINE</span>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span id="currentPhaseLabel">Phase 1: Days R+0 to R+7 (Stabilization & Balance)</span>
+            </h3>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono text-slate-400">Selected Day:</span>
+            <span class="text-xl font-black font-mono text-emerald-400 px-3 py-1 bg-emerald-950 border border-emerald-800 rounded-lg" id="dayIndicatorBadge">
+              Day R+3
+            </span>
+          </div>
+        </div>
+
+        <!-- Range Slider -->
+        <div class="space-y-2">
+          <input type="range" id="timelineSlider" min="0" max="45" value="3" oninput="onTimelineChange(this.value)" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+          <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
+            <span>R+0 (Touchdown)</span>
+            <span class="text-cyan-400 font-bold">Phase 1 (R+0-7)</span>
+            <span class="text-emerald-400 font-bold">Phase 2 (R+8-21)</span>
+            <span class="text-blue-400 font-bold">Phase 3 (R+22-45)</span>
+            <span>R+45 (100% Earth Certified)</span>
+          </div>
+        </div>
+
+        <!-- Phase Description Pill -->
+        <div class="mt-4 p-3 bg-space-850 rounded-xl border border-slate-800 text-xs flex items-center justify-between text-slate-300">
+          <div class="flex items-center gap-2">
+            <span id="phaseIcon" class="text-base">🚴</span>
+            <span id="phaseThemeText">Focus: Orthostatic Tolerance, Recumbent Cycling & Inner-Ear Otolith Calibration</span>
+          </div>
+          <span class="text-[11px] font-mono text-emerald-400 hidden sm:inline" id="phaseProtocolTag">APTP Protocol Block</span>
+        </div>
+      </div>
+
+      <!-- Mode B Main Columns: Body Map & Daily Session (5 Cols + 7 Cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Recovery Body Map & NHIS Earth Readiness Meter (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+
+          <!-- Recovery Body Map with Highlighted Muscle Groups -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+              <div>
+                <h3 class="text-sm font-bold text-white">Post-Flight Vulnerability Body Map</h3>
+                <p class="text-xs text-slate-400">Highlighted areas require targeted stabilization before heavy 1-G loading.</p>
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
+                High Strain Zones
+              </span>
+            </div>
+
+            <!-- SVG Anatomical Map highlighting Core, Calf, Cervical -->
+            <div class="relative w-full aspect-[4/5] max-h-[360px] mx-auto flex items-center justify-center p-2 bg-space-950/60 rounded-xl border border-slate-800/80">
+              <svg viewBox="0 0 300 400" class="w-full h-full max-w-[260px]">
+                <path d="M 150 40 C 138 40, 130 50, 130 65 C 130 80, 138 90, 142 95 L 125 110 L 90 125 L 70 200 L 85 205 L 105 145 L 122 140 L 120 235 L 105 325 L 100 395 L 120 400 L 138 325 L 145 255 L 155 255 L 162 325 L 180 400 L 200 395 L 195 325 L 180 235 L 178 140 L 195 145 L 215 205 L 230 200 L 210 125 L 175 110 L 158 95 C 162 90, 170 80, 170 65 C 170 50, 162 40, 150 40 Z" fill="#1E293B" stroke="#334155" stroke-width="2" />
+                
+                <!-- Cervical Paraspinals (Neck) -->
+                <rect x="144" y="90" width="12" height="15" rx="3" fill="#F59E0B" opacity="0.8" />
+                
+                <!-- Deep Core / Multifidus / Lumbar Spine -->
+                <rect x="142" y="150" width="16" height="60" rx="4" fill="#EF4444" opacity="0.85" />
+                <circle cx="150" cy="180" r="14" fill="rgba(239,68,68,0.25)" stroke="#EF4444" stroke-width="1.5" />
+                <text x="75" y="180" font-size="9" font-family="monospace" fill="#EF4444" text-anchor="end">Core Stabilizers</text>
+                <line x1="135" y1="180" x2="80" y2="180" stroke="#EF4444" stroke-dasharray="2,2" />
+
+                <!-- Quadriceps & Hamstrings -->
+                <rect x="118" y="240" width="14" height="45" rx="4" fill="#F59E0B" opacity="0.8" />
+                <rect x="168" y="240" width="14" height="45" rx="4" fill="#F59E0B" opacity="0.8" />
+
+                <!-- Soleus & Gastrocnemius (Calves) -->
+                <rect x="114" y="325" width="15" height="50" rx="4" fill="#EF4444" opacity="0.9" />
+                <rect x="171" y="325" width="15" height="50" rx="4" fill="#EF4444" opacity="0.9" />
+                <text x="215" y="350" font-size="9" font-family="monospace" fill="#EF4444">Soleus / Calves</text>
+                <line x1="190" y1="350" x2="210" y2="350" stroke="#EF4444" stroke-dasharray="2,2" />
+              </svg>
+            </div>
+
+            <div class="mt-3 p-3 bg-rose-950/20 border border-rose-900/60 rounded-xl text-xs text-rose-300">
+              <span class="font-bold block mb-1">⚠️ Flight Surgeon Biomechanical Alert:</span>
+              Deep spinal stabilizers (multifidus) show 22% cross-sectional area shrinkage. Heavy spinal axial compression (barbell squats) strictly prohibited until Phase 3 (Day R+22).
+            </div>
+          </div>
+
+          <!-- Earth Readiness Meter (HealthData.gov NHIS Standards) -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+              <div>
+                <h3 class="text-sm font-bold text-white">Earth Readiness Meter</h3>
+                <span class="text-[10px] font-mono text-cyan-400">HealthData.gov NHIS Baseline Standard</span>
+              </div>
+              <span id="readinessGradeBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                RECONDITIONING IN PROGRESS
+              </span>
+            </div>
+
+            <!-- Overall Score Progress Gauge -->
+            <div class="text-center py-3 bg-space-850 rounded-xl border border-slate-800 mb-4">
+              <div class="text-3xl font-black font-mono text-emerald-400" id="readinessPercentText">
+                54%
+              </div>
+              <span class="text-xs text-slate-400">Trajectory toward 100% Pre-Flight Earth Baseline</span>
+              <div class="w-full max-w-xs mx-auto bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                <div id="readinessProgressBar" class="bg-gradient-to-r from-amber-500 via-emerald-500 to-cyan-400 h-full rounded-full transition-all duration-500" style="width: 54%"></div>
+              </div>
+            </div>
+
+            <!-- NHIS Benchmark Sub-Bars -->
+            <div class="space-y-3 text-xs font-mono">
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1 text-[11px]">
+                  <span>VO2 Max Aerobic Capacity (NHIS 48.5 mL/kg/min)</span>
+                  <span class="text-white font-bold" id="barVo2Text">52%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div id="barVo2" class="bg-cyan-500 h-full transition-all duration-500" style="width: 52%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1 text-[11px]">
+                  <span>Vestibular Balance (Single-leg eyes closed 30s)</span>
+                  <span class="text-white font-bold" id="barVestibularText">45%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div id="barVestibular" class="bg-emerald-500 h-full transition-all duration-500" style="width: 45%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1 text-[11px]">
+                  <span>Orthostatic Systolic Pulse Stability (Standing 10m)</span>
+                  <span class="text-white font-bold" id="barOrthoText">48%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div id="barOrtho" class="bg-amberAlert h-full transition-all duration-500" style="width: 48%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Today's 2-Hour Physio Block & Safety Stop System (7 Cols) -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- Real-Time Pain & Dizziness Safety Stop Bar -->
+          <div class="bg-space-900/90 border-2 border-slate-800 rounded-2xl p-5 shadow-lg" id="safetyStopCard">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🛡️</span>
+                <div>
+                  <h3 class="text-sm font-bold text-white">Active Safety Stop Monitoring System</h3>
+                  <p class="text-xs text-slate-400">If dizziness > 4/10 or pain > 5/10, automatically triggers immediate intensity scaleback.</p>
+                </div>
+              </div>
+              <span id="safetyStatusPill" class="text-xs font-mono font-bold px-2.5 py-0.8 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                STATUS: SAFE TO TRAIN
+              </span>
+            </div>
+
+            <!-- Interactive Symptom Input Sliders -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <!-- Dizziness Rating -->
+              <div class="p-3 bg-space-850 rounded-xl border border-slate-800">
+                <div class="flex justify-between items-center mb-1 text-xs font-mono">
+                  <span class="text-slate-300 font-bold">Vestibular Dizziness</span>
+                  <span class="text-base font-bold text-cyan-400" id="dizzinessValText">2 / 10</span>
+                </div>
+                <input type="range" id="dizzinessSlider" min="0" max="10" value="2" oninput="onSymptomChange()" class="w-full h-2 bg-slate-800 rounded appearance-none cursor-pointer accent-cyan-400">
+                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                  <span>0: Clear</span>
+                  <span class="text-amberAlert">4: Warning</span>
+                  <span class="text-rose-400">10: Severe Vertigo</span>
+                </div>
+              </div>
+
+              <!-- Musculoskeletal Pain Rating -->
+              <div class="p-3 bg-space-850 rounded-xl border border-slate-800">
+                <div class="flex justify-between items-center mb-1 text-xs font-mono">
+                  <span class="text-slate-300 font-bold">Joint / Muscular Pain</span>
+                  <span class="text-base font-bold text-amberAlert" id="painValText">1 / 10</span>
+                </div>
+                <input type="range" id="painSlider" min="0" max="10" value="1" oninput="onSymptomChange()" class="w-full h-2 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400">
+                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                  <span>0: None</span>
+                  <span class="text-amberAlert">5: Warning</span>
+                  <span class="text-rose-400">10: Acute Tear</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Safety Stop Advisory Notice -->
+            <div id="safetyStopAlertBanner" class="p-3 bg-space-850 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
+              <span>✅</span>
+              <div>
+                <span class="font-bold text-white block">Physiological parameters nominal.</span>
+                <span class="text-slate-400">Full 2-hour exercise prescription authorized for today's reconditioning block.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's 2-Hour Physio Block & Interactive Exercise Checklist -->
+          <div class="bg-space-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 mb-4 gap-2">
+              <div>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold" id="sessionBlockHeader">2-HOUR REHAB PROTOCOL</span>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                  <span>Today's Prescribed Reconditioning Session</span>
+                </h3>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-mono">
+                <span class="text-slate-400">Progress:</span>
+                <span class="font-bold text-emerald-400" id="sessionProgressText">0 / 4 Completed</span>
+              </div>
+            </div>
+
+            <!-- 2-Hour Structure Breakdown Pills -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-[10px] font-mono mb-4 text-slate-400">
+              <div class="bg-space-850 p-1.5 rounded border border-slate-800">
+                <span class="text-white block font-bold">15m</span> Warmup
+              </div>
+              <div class="bg-space-850 p-1.5 rounded border border-slate-800">
+                <span class="text-white block font-bold">30m</span> Cardio
+              </div>
+              <div class="bg-space-850 p-1.5 rounded border border-slate-800">
+                <span class="text-white block font-bold">30m</span> Vestibular
+              </div>
+              <div class="bg-space-850 p-1.5 rounded border border-slate-800">
+                <span class="text-white block font-bold">30m</span> Strength
+              </div>
+              <div class="bg-space-850 p-1.5 rounded border border-slate-800">
+                <span class="text-white block font-bold">15m</span> Cooldown
+              </div>
+            </div>
+
+            <!-- Dynamic Exercise Checklist Cards -->
+            <div class="space-y-3" id="exerciseCardsList">
+              <!-- Dynamically rendered according to current Phase -->
+            </div>
+
+            <!-- Session Completion Action -->
+            <div class="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-mono">Completed drills award recovery bonus</span>
+              <button onclick="completeCurrentSession()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2">
+                <span>🎉</span>
+                <span>SUBMIT COMPLETED 2-HR REHAB BLOCK</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 2: ARCHITECTURE (TECHNICAL ARCHITECTURE & NASA WORKFLOW) -->
+  <!-- ========================================================================= -->
+  <section id="pageTab_architecture" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8 hidden">
+    <div class="bg-space-900 border border-slate-800 rounded-2xl p-6 md:p-8">
+      <div class="max-w-3xl mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">SYSTEM ARCHITECTURE</span>
+        <h2 class="text-2xl md:text-3xl font-black text-white mt-1 mb-3">Dual-Mode Clinical AI & 100% Offline Decision Pipeline</h2>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          ASTRAL-MED bridges the gap between deep-space isolation and Earth return. In flight, telecommunications lag (up to 22 minutes to Mars) prohibits telemedicine dependency. Upon landing, astronauts require structured, phased neuromotor recalibration.
+        </p>
+      </div>
+
+      <!-- 3-Pillar Solution Architecture -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-xs">
+        <div class="p-5 bg-space-850 rounded-xl border border-slate-800">
+          <div class="w-10 h-10 rounded-lg bg-cyan-950 border border-cyan-500/60 flex items-center justify-center text-xl text-cyan-300 mb-3">
+            🧠
+          </div>
+          <h3 class="text-base font-bold text-white mb-2 font-mono">1. Zero-Cloud Local Inference</h3>
+          <p class="text-slate-400 leading-relaxed">
+            All clinical decisions, SANS optic nerve sheath diameter (ONSD) evaluations, and jugular vein thrombosis screenings run directly on device via high-fidelity JSON rule-engines with 0 ms latency.
+          </p>
+        </div>
+
+        <div class="p-5 bg-space-850 rounded-xl border border-slate-800">
+          <div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-500/60 flex items-center justify-center text-xl text-emerald-300 mb-3">
+            🔄
+          </div>
+          <h3 class="text-base font-bold text-white mb-2 font-mono">2. Biomechanical Handover Bridge</h3>
+          <p class="text-slate-400 leading-relaxed">
+            In-flight exercise adherence, missed ARED resistance loads, and cephalad fluid shifts recorded in Mode A automatically parametrize Mode B's predictive muscle atrophy and bone density loss models.
+          </p>
+        </div>
+
+        <div class="p-5 bg-space-850 rounded-xl border border-slate-800">
+          <div class="w-10 h-10 rounded-lg bg-amber-950 border border-amber-500/60 flex items-center justify-center text-xl text-amber-300 mb-3">
+            📊
+          </div>
+          <h3 class="text-base font-bold text-white mb-2 font-mono">3. NHIS Earth Baseline Validation</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Measures post-flight rehabilitation progress against civilian National Health Interview Survey (HealthData.gov NHIS) standards across VO2max, vestibular sway, and orthostatic pulse pressure stability.
+          </p>
+        </div>
+      </div>
+
+      <!-- Clinical Protocol Alignment Matrix -->
+      <div class="bg-space-950 p-5 rounded-xl border border-slate-800">
+        <h4 class="font-bold text-white font-mono text-sm mb-3">Spaceflight Standards Alignment:</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+          <div class="p-3 bg-space-900 rounded border border-slate-800">
+            <span class="text-cyan-400 font-bold block mb-1">NASA MD 44-A</span>
+            <span class="text-slate-400">Internal Jugular Vein Thrombosis & Anticoagulant Protocol</span>
+          </div>
+          <div class="p-3 bg-space-900 rounded border border-slate-800">
+            <span class="text-emerald-400 font-bold block mb-1">NASA JSC APTP</span>
+            <span class="text-slate-400">Astronaut Physical Therapy & 45-Day Reconditioning Protocol</span>
+          </div>
+          <div class="p-3 bg-space-900 rounded border border-slate-800">
+            <span class="text-amberAlert font-bold block mb-1">NASA SANS Taskforce</span>
+            <span class="text-slate-400">Transorbital Ultrasound & Optic Nerve Sheath Evaluation</span>
+          </div>
+          <div class="p-3 bg-space-900 rounded border border-slate-800">
+            <span class="text-blue-400 font-bold block mb-1">NASA DONKI Gateway</span>
+            <span class="text-slate-400">Coronal Mass Ejection (CME) & Solar Radiation Alerts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 3: DEPLOYMENT (MISSION DEPLOYMENT TIERS) -->
+  <!-- ========================================================================= -->
+  <section id="pageTab_deployment" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8 hidden">
+    <div class="bg-space-900 border border-slate-800 rounded-2xl p-6 md:p-8">
+      <div class="max-w-3xl mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">MISSION LICENSING & DEPLOYMENT</span>
+        <h2 class="text-2xl md:text-3xl font-black text-white mt-1 mb-2">Space Exploration Tiers</h2>
+        <p class="text-sm text-slate-300">Scalable mission health suites designed for commercial LEO stations, lunar outposts, and deep-space expeditions.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Tier 1: LEO Commercial -->
+        <div class="p-6 bg-space-850 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-mono text-cyan-400 font-bold mb-1">LEO RESEARCH & DEMO</div>
+            <h3 class="text-xl font-bold text-white mb-2">Open Challenge Tier</h3>
+            <div class="text-3xl font-black text-white font-mono mb-4">$0 <span class="text-xs text-slate-400 font-normal">/ NASA Space Apps 2026</span></div>
+            <p class="text-xs text-slate-400 mb-4 leading-relaxed">For university labs, analog astronaut habitats, and open-source space research.</p>
+            <ul class="space-y-2 text-xs font-mono text-slate-300 mb-6">
+              <li class="flex items-center gap-2"><span>✓</span> 100% Offline Local JSON Rule-Engine</li>
+              <li class="flex items-center gap-2"><span>✓</span> Interactive Digital Twin Body Map</li>
+              <li class="flex items-center gap-2"><span>✓</span> 45-Day Post-Flight Reconditioning Plan</li>
+              <li class="flex items-center gap-2"><span>✓</span> NASA DONKI Space Weather API</li>
+            </ul>
+          </div>
+          <button onclick="switchPageTab('home')" class="w-full py-2 rounded-xl bg-space-800 hover:bg-space-700 text-cyan-300 font-mono text-xs font-bold border border-slate-700">
+            Launch Current Demo
+          </button>
+        </div>
+
+        <!-- Tier 2: Lunar Gateway & Base -->
+        <div class="p-6 bg-space-850 rounded-2xl border-2 border-cyan-500/70 shadow-lg shadow-cyan-500/10 flex flex-col justify-between relative">
+          <div class="absolute -top-3 right-4 px-2 py-0.5 rounded bg-cyan-600 text-white font-mono text-[10px] font-bold">
+            RECOMMENDED
+          </div>
+          <div>
+            <div class="text-xs font-mono text-cyan-400 font-bold mb-1">COMMERCIAL LEO & LUNAR</div>
+            <h3 class="text-xl font-bold text-white mb-2">Expedition Suite</h3>
+            <div class="text-3xl font-black text-cyan-300 font-mono mb-4">$2,400 <span class="text-xs text-slate-400 font-normal">/ mission seat / mo</span></div>
+            <p class="text-xs text-slate-400 mb-4 leading-relaxed">For commercial space stations (Axiom, Orbital Reef) and Artemis Lunar Gateway flights.</p>
+            <ul class="space-y-2 text-xs font-mono text-slate-300 mb-6">
+              <li class="flex items-center gap-2"><span>✓</span> Everything in Open Challenge Tier</li>
+              <li class="flex items-center gap-2"><span>✓</span> Butterfly iQ+ Ultrasound Plug-and-Play</li>
+              <li class="flex items-center gap-2"><span>✓</span> Multi-Astronaut Flight Crew Sync</li>
+              <li class="flex items-center gap-2"><span>✓</span> Ground Control Flight Surgeon Uplink</li>
+            </ul>
+          </div>
+          <button onclick="switchPageTab('contact')" class="w-full py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-bold shadow-md shadow-cyan-600/30">
+            Request Flight Certification
+          </button>
+        </div>
+
+        <!-- Tier 3: Deep Space Mars -->
+        <div class="p-6 bg-space-850 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-mono text-emerald-400 font-bold mb-1">DEEP SPACE EXPLORATION</div>
+            <h3 class="text-xl font-bold text-white mb-2">Autonomous Agency</h3>
+            <div class="text-3xl font-black text-white font-mono mb-4">Enterprise <span class="text-xs text-slate-400 font-normal">/ Multi-Year Vehicle</span></div>
+            <p class="text-xs text-slate-400 mb-4 leading-relaxed">Complete hardware avionics integration for multi-year Mars Transit Vehicles.</p>
+            <ul class="space-y-2 text-xs font-mono text-slate-300 mb-6">
+              <li class="flex items-center gap-2"><span>✓</span> Zero-Communication Autonomous Surgical AI</li>
+              <li class="flex items-center gap-2"><span>✓</span> Radiation Biodosimetry Forecasting</li>
+              <li class="flex items-center gap-2"><span>✓</span> Custom Spacecraft Telemetry Bus (MIL-STD-1553)</li>
+              <li class="flex items-center gap-2"><span>✓</span> Flight Surgeon 24/7 Red-Phone Standby</li>
+            </ul>
+          </div>
+          <button onclick="switchPageTab('contact')" class="w-full py-2 rounded-xl bg-space-800 hover:bg-space-700 text-emerald-300 font-mono text-xs font-bold border border-slate-700">
+            Contact Space Agency Desk
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 4: HUMAN RESILIENCE & EARTH IMPACT (2026 NASA SPACE APPS CHALLENGE) -->
+  <!-- ========================================================================= -->
+  <section id="pageTab_impact" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8 hidden">
+    <div class="bg-space-900 border border-slate-800 rounded-2xl p-6 md:p-8">
+      
+      <!-- Updated Page Header -->
+      <div class="max-w-3xl mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold">HUMAN RESILIENCE & EARTH IMPACT</span>
+        <h2 class="text-2xl md:text-3xl font-black text-white mt-1 mb-2">Autonomous Crew Health for Deep Space & Remote Earth</h2>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          Long-duration spaceflight requires medical systems that operate without real-time ground support—creating a blueprint for offline-first healthcare in both deep space and underserved communities on Earth.
+        </p>
+      </div>
+
+      <!-- Updated 2-Card Content -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-xs">
+        
+        <!-- Card 1: Deep-Space Medical Autonomy -->
+        <div class="p-6 bg-space-850 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-lg bg-cyan-950 border border-cyan-500/60 flex items-center justify-center text-xl text-cyan-300 mb-3">
+              🚀
+            </div>
+            <h3 class="text-base font-bold text-white mb-2 font-mono">Deep-Space Medical Autonomy</h3>
+            <p class="text-slate-300 leading-relaxed mb-4">
+              When crews travel to Mars, communication delays reach up to 20 minutes each way. ASTRAL-MED eliminates reliance on live Earth connectivity by running 100% offline triage, guided ultrasound protocols, and space-weather risk adjustments directly on the crew's local device.
+            </p>
+          </div>
+          <div class="p-3.5 bg-space-900 rounded-xl border border-slate-800 text-[11px] font-mono text-cyan-300 space-y-1.5">
+            <div class="flex items-start gap-2">
+              <span class="text-cyan-400 font-bold">•</span>
+              <span>Zero-cloud local JSON rule-engine for instant DVT & SANS triage</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-cyan-400 font-bold">•</span>
+              <span>NASA DONKI solar flare & radiation alerts triggering proactive hydration checks</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Earth Impact & Long-Term Recovery -->
+        <div class="p-6 bg-space-850 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-500/60 flex items-center justify-center text-xl text-emerald-300 mb-3">
+              🌍
+            </div>
+            <h3 class="text-base font-bold text-white mb-2 font-mono">Earth Impact & Long-Term Recovery</h3>
+            <p class="text-slate-300 leading-relaxed mb-4">
+              The same offline-first guidance built for non-doctor astronauts translates directly to rural clinics, disaster zones, and post-flight rehabilitation—ensuring both astronauts returning from microgravity and patients on Earth recover safely.
+            </p>
+          </div>
+          <div class="p-3.5 bg-space-900 rounded-xl border border-slate-800 text-[11px] font-mono text-emerald-300 space-y-1.5">
+            <div class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span>45-day post-landing physiotherapy & reconditioning plan (Mode B)</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span>Plain-language self-exam guides adaptable for remote community health workers</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Human Resilience & Earth Impact Pledge Banner -->
+      <div class="p-5 bg-gradient-to-r from-cyan-950/40 via-space-900 to-emerald-950/40 border border-slate-800 rounded-xl text-center">
+        <h4 class="text-white font-bold font-mono text-sm mb-1">NASA Space Apps Challenge 2026 Resilience Pledge:</h4>
+        <p class="text-xs text-slate-400 max-w-2xl mx-auto">
+          "Pioneering autonomous medical intelligence for deep-space explorers &mdash; while expanding offline, decentralized clinical resilience to underserved populations and healthcare workers across planet Earth."
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 5: ABOUT (THE 4 TEAM MEMBERS WITH DETAILED ROLES & BIOS) -->
+  <!-- ========================================================================= -->
+  <section id="pageTab_about" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8 hidden">
+    <div class="bg-space-900 border border-slate-800 rounded-2xl p-6 md:p-8">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto mb-10">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">MEET THE BUILDERS</span>
+        <h2 class="text-3xl font-black text-white mt-1 mb-2">Team Nebula Four</h2>
+        <p class="text-sm text-slate-300">
+          NASA Space Apps Challenge 2026 Core Engineering Squad &mdash; Combining AI/ML, clinical spaceflight protocols, high-contrast HUD design, and resilient offline-first web architecture.
+        </p>
+      </div>
+
+      <!-- 4 Team Member Profile Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <!-- 1. Udamgie -->
+        <div class="bg-space-850 border border-cyan-500/40 rounded-2xl p-5 hover:border-cyan-400 transition-all hover:scale-[1.02] flex flex-col justify-between group">
+          <div>
+            <!-- Avatar & Badge -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-cyan-950 border-2 border-cyan-500 flex items-center justify-center text-cyan-300 font-black text-xl shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+                U
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">
+                AI / ML ENGINEER
+              </span>
+            </div>
+
+            <h3 class="text-lg font-bold text-white mb-0.5">Udamgie</h3>
+            <span class="text-xs text-cyan-400 font-mono block mb-3">AI / Machine Learning Engineer</span>
+            
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Formulated the mathematical predictive models and clinical decision trees. Engineered the 100% offline local JSON rule-engine for SANS optic sheath diameter (ONSD), jugular vein Doppler velocity triage, and post-flight muscle atrophy decay equations.
+            </p>
+          </div>
+
+          <div>
+            <div class="pt-3 border-t border-slate-800 text-[11px] font-mono space-y-1.5">
+              <div class="text-slate-400 font-bold uppercase text-[10px]">Core Responsibilities:</div>
+              <div class="text-cyan-200">• Offline JSON Decision Trees</div>
+              <div class="text-cyan-200">• Atrophy Decay Formulations</div>
+              <div class="text-cyan-200">• SANS & IJV Thrombosis Models</div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-1">
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">PyTorch</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Decision Trees</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Edge ML</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Rashmi -->
+        <div class="bg-space-850 border border-emerald-500/40 rounded-2xl p-5 hover:border-emerald-400 transition-all hover:scale-[1.02] flex flex-col justify-between group">
+          <div>
+            <!-- Avatar & Badge -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center text-emerald-300 font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                R
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">
+                FRONTEND LEAD
+              </span>
+            </div>
+
+            <h3 class="text-lg font-bold text-white mb-0.5">Rashmi</h3>
+            <span class="text-xs text-emerald-400 font-mono block mb-3">Frontend Developer & UI/UX</span>
+            
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Architected the high-contrast NASA Mission Control dark HUD interface. Built the interactive SVG "Digital Twin" human body map with pulsating Green/Amber/Red anatomical hotspots and the clinical recovery vulnerability view.
+            </p>
+          </div>
+
+          <div>
+            <div class="pt-3 border-t border-slate-800 text-[11px] font-mono space-y-1.5">
+              <div class="text-slate-400 font-bold uppercase text-[10px]">Core Responsibilities:</div>
+              <div class="text-emerald-200">• Mission Control HUD UI</div>
+              <div class="text-emerald-200">• SVG Digital Twin Body Map</div>
+              <div class="text-emerald-200">• Responsive Tailwind Design</div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-1">
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Tailwind CSS</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">SVG Graphics</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">UI/UX</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Buddhiprabha -->
+        <div class="bg-space-850 border border-amber-500/40 rounded-2xl p-5 hover:border-amber-400 transition-all hover:scale-[1.02] flex flex-col justify-between group">
+          <div>
+            <!-- Avatar & Badge -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-amber-950 border-2 border-amber-500 flex items-center justify-center text-amber-300 font-black text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                B
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold">
+                DELIVERY LEAD
+              </span>
+            </div>
+
+            <h3 class="text-lg font-bold text-white mb-0.5">Buddhiprabha</h3>
+            <span class="text-xs text-amberAlert font-mono block mb-3">Delivery Lead & Clinical Alignment</span>
+            
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Spearheaded NASA Space Apps challenge alignment and clinical protocol fidelity. Mapped workflows to NASA Medical Directive 44-A (IJV thrombosis) and the NASA JSC Astronaut Physical Therapy & Reconditioning Protocol (APTP).
+            </p>
+          </div>
+
+          <div>
+            <div class="pt-3 border-t border-slate-800 text-[11px] font-mono space-y-1.5">
+              <div class="text-slate-400 font-bold uppercase text-[10px]">Core Responsibilities:</div>
+              <div class="text-amber-200">• NASA JSC APTP Alignment</div>
+              <div class="text-amber-200">• Flight Surgeon Directive 44-A</div>
+              <div class="text-amber-200">• Milestone & Delivery Lead</div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-1">
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Biomedical</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Compliance</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Scrum</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Vidasni -->
+        <div class="bg-space-850 border border-blue-500/40 rounded-2xl p-5 hover:border-blue-400 transition-all hover:scale-[1.02] flex flex-col justify-between group">
+          <div>
+            <!-- Avatar & Badge -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-blue-950 border-2 border-blue-500 flex items-center justify-center text-blue-300 font-black text-xl shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                V
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-bold">
+                WEB DEVELOPER
+              </span>
+            </div>
+
+            <h3 class="text-lg font-bold text-white mb-0.5">Vidasni</h3>
+            <span class="text-xs text-blue-400 font-mono block mb-3">Full-Stack Web Developer</span>
+            
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Engineered the Dual-Mode onboarding and routing engine, `localStorage` Handover Bridge, HealthData.gov NHIS Earth baseline calibration routines, and Web Audio API NASA mission telemetry synthesizer.
+            </p>
+          </div>
+
+          <div>
+            <div class="pt-3 border-t border-slate-800 text-[11px] font-mono space-y-1.5">
+              <div class="text-slate-400 font-bold uppercase text-[10px]">Core Responsibilities:</div>
+              <div class="text-blue-200">• LocalStorage Handover Engine</div>
+              <div class="text-blue-200">• NHIS Earth Baselines</div>
+              <div class="text-blue-200">• Web Audio API Telemetry</div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-1">
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">JavaScript</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Web Audio</span>
+              <span class="text-[9px] bg-space-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">REST APIs</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Team Challenge Statement Banner -->
+      <div class="mt-8 p-4 bg-space-850 rounded-xl border border-slate-800 text-xs text-center text-slate-400 font-mono">
+        🚀 Developed with pride for the <strong class="text-cyan-300">2026 NASA Space Apps Challenge</strong> by Udamgie, Rashmi, Buddhiprabha, and Vidasni.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- TAB VIEW 6: CONTACT (MISSION CONTROL UPLINK & COLLABORATION) -->
+  <!-- ========================================================================= -->
+  <section id="pageTab_contact" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8 hidden">
+    <div class="bg-space-900 border border-slate-800 rounded-2xl p-6 md:p-8">
+      <div class="max-w-3xl mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">MISSION CONTROL UPLINK</span>
+        <h2 class="text-2xl md:text-3xl font-black text-white mt-1 mb-2">Connect with Team Nebula Four</h2>
+        <p class="text-sm text-slate-300">Submit clinical inquiries, report telemetry feeds, or collaborate on space medicine research.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+        <div class="space-y-4">
+          <div class="p-4 bg-space-850 rounded-xl border border-slate-800">
+            <h4 class="font-bold text-white mb-1 font-mono">NASA Space Apps Project Code:</h4>
+            <p class="text-slate-400 font-mono text-cyan-300">CHALLENGE-2026-ASTRAL-MED-NEBULA4</p>
+          </div>
+          <div class="p-4 bg-space-850 rounded-xl border border-slate-800">
+            <h4 class="font-bold text-white mb-1 font-mono">Autonomous Offline Verification:</h4>
+            <p class="text-slate-400">Works 100% disconnected from the internet. All telemetry stays inside the habitat.</p>
+          </div>
+          <div class="p-4 bg-space-850 rounded-xl border border-slate-800">
+            <h4 class="font-bold text-white mb-1 font-mono">Lead Developer Inquiries:</h4>
+            <p class="text-slate-400 font-mono">astral-med@spaceapps.nasa.gov</p>
+          </div>
+        </div>
+
+        <!-- Contact Message Form -->
+        <div class="p-5 bg-space-850 rounded-xl border border-slate-800 space-y-3 font-mono">
+          <div>
+            <label class="block text-slate-400 mb-1">Your Name / Agency</label>
+            <input type="text" placeholder="Dr. Flight Surgeon / Astronaut" class="w-full bg-space-900 text-white border border-slate-700 rounded px-3 py-2 text-xs focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Message / Clinical Query</label>
+            <textarea rows="4" placeholder="Enter telemetry question, SANS protocol review, or partnership request..." class="w-full bg-space-900 text-white border border-slate-700 rounded px-3 py-2 text-xs focus:border-cyan-400"></textarea>
+          </div>
+          <button onclick="alert('📡 Uplink message dispatched to Team Nebula Four Flight Surgeons!')" class="w-full py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md shadow-cyan-600/30">
+            Transmit Uplink Message
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- NASA OPEN API MODAL (CUSTOM KEY & DIAGNOSTICS) -->
+  <!-- ========================================== -->
+  <div id="nasaModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+    <div class="bg-space-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h3 class="font-bold text-white text-base flex items-center gap-2">
+          <span>🛰️ NASA Open API (api.nasa.gov) Gateway</span>
+        </h3>
+        <button onclick="closeNasaModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed mb-4">
+        ASTRAL-MED integrates live space weather feeds from the NASA DONKI (Database Of Notifications, Knowledge, Information) to alert in-flight astronauts to solar flare and Coronal Mass Ejection (CME) radiation hazards.
+      </p>
+
+      <div class="space-y-3 mb-4 text-xs font-mono">
+        <div>
+          <label class="block text-slate-400 mb-1">NASA API Key (defaults to free DEMO_KEY)</label>
+          <input type="text" id="nasaApiKeyInput" value="DEMO_KEY" class="w-full bg-space-850 text-white border border-slate-700 rounded px-3 py-2 focus:border-cyan-400">
+        </div>
+        <div class="bg-space-850 p-3 rounded-lg border border-slate-800">
+          <span class="text-slate-400 block text-[11px]">Architecture Principle:</span>
+          <span class="text-emerald-400 font-bold">100% Offline Resilience.</span> If offline or rate-limited, local JSON rule-engines automatically run fallback orbital space weather simulations so the crew never experiences downtime.
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeNasaModal()" class="px-4 py-1.5 rounded bg-space-850 text-slate-300 text-xs font-mono">Close</button>
+        <button onclick="saveAndTestNasaKey()" class="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-bold">Save & Test Query</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- APPLICATION CORE SCRIPT MODULE -->
+  <!-- ========================================== -->
+  <script type="module">
+    import { AstralRuleEngine } from './src/rule-engine.js';
+    import { NasaSpaceWeatherService } from './src/nasa-api.js';
+    import { missionAudio } from './src/audio-service.js';
+
+    // Application Global State
+    window.appState = {
+      activePageTab: 'home', // 'home' | 'solution' | 'pricing' | 'sustainability' | 'about' | 'contact'
+      mode: 'flight', // 'flight' | 'rehab'
+      environment: 'microgravity',
+      activeSubsystem: 'cardiovascular',
+      missionPreset: 'standard_iss_180d',
+      currentTimelineDay: 3,
+      currentPhase: 1,
+      completedExercises: new Set(),
+      completedSessionsCount: 3,
+      dizzinessScore: 2,
+      painScore: 1,
+      inFlightHistory: [],
+      rulesData: null
+    };
+
+    let ruleEngine = null;
+    let nasaService = new NasaSpaceWeatherService('DEMO_KEY');
+
+    // Page Tab Switcher (Home, Architecture, Deployment, Impact, About, Contact)
+    window.switchPageTab = function(rawTabName) {
+      missionAudio.playBeep(700);
+      
+      // Alias mapping
+      const aliasMap = {
+        'solution': 'architecture',
+        'pricing': 'deployment',
+        'sustainability': 'impact'
+      };
+      const tabName = aliasMap[rawTabName] || rawTabName;
+      window.appState.activePageTab = tabName;
+
+      const allTabs = ['home', 'architecture', 'deployment', 'impact', 'about', 'contact'];
+      allTabs.forEach(t => {
+        const pageEl = document.getElementById(`pageTab_${t}`);
+        const navEl = document.getElementById(`navTab_${t}`);
+        if (pageEl) {
+          if (t === tabName) {
+            pageEl.classList.remove('hidden');
+          } else {
+            pageEl.classList.add('hidden');
+          }
+        }
+        if (navEl) {
+          if (t === tabName) {
+            navEl.classList.add('nav-tab-active');
+          } else {
+            navEl.classList.remove('nav-tab-active');
+          }
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Initialize Application
+    async function initApp() {
+      try {
+        const [inFlightResp, postFlightResp, nhisResp] = await Promise.all([
+          fetch('./rules/in-flight-triage.json').then(r => r.json()),
+          fetch('./rules/post-flight-rehab.json').then(r => r.json()),
+          fetch('./rules/nhis-earth-baselines.json').then(r => r.json())
+        ]);
+
+        window.appState.rulesData = {
+          inFlight: inFlightResp,
+          postFlight: postFlightResp,
+          nhis: nhisResp
+        };
+
+        ruleEngine = new AstralRuleEngine(inFlightResp, postFlightResp, nhisResp);
+
+        loadInFlightLogs();
+        renderSubsystemForm('cardiovascular');
+        renderNasaDonki();
+        refreshPostFlightMode();
+
+      } catch (err) {
+        console.error("Initialization error:", err);
+      }
+    }
+
+    // Load In-Flight daily logs from localStorage
+    function loadInFlightLogs() {
+      try {
+        const stored = localStorage.getItem('astral_med_flight_logs');
+        if (stored) {
+          window.appState.inFlightHistory = JSON.parse(stored);
+        } else {
+          window.appState.inFlightHistory = [
+            { day: 1, daily_ared_load: 96, missed_workouts: 0, cephalad_fluid_shift_index: 2, sleep_duration: 7.5 },
+            { day: 2, daily_ared_load: 92, missed_workouts: 0, cephalad_fluid_shift_index: 2, sleep_duration: 7.2 },
+            { day: 3, daily_ared_load: 88, missed_workouts: 1, cephalad_fluid_shift_index: 3, sleep_duration: 6.8 },
+            { day: 4, daily_ared_load: 95, missed_workouts: 0, cephalad_fluid_shift_index: 2, sleep_duration: 7.4 },
+            { day: 5, daily_ared_load: 90, missed_workouts: 0, cephalad_fluid_shift_index: 3, sleep_duration: 7.1 },
+            { day: 6, daily_ared_load: 98, missed_workouts: 0, cephalad_fluid_shift_index: 2, sleep_duration: 7.8 },
+            { day: 7, daily_ared_load: 94, missed_workouts: 0, cephalad_fluid_shift_index: 2, sleep_duration: 7.3 }
+          ];
+          localStorage.setItem('astral_med_flight_logs', JSON.stringify(window.appState.inFlightHistory));
+        }
+        const badge = document.getElementById('logCountBadge');
+        if (badge) badge.innerText = `${window.appState.inFlightHistory.length} Days Logged`;
+      } catch (e) {
+        console.warn("Storage access note:", e);
+      }
+    }
+
+    // Save New Daily In-Flight Log
+    window.commitInFlightLog = function() {
+      missionAudio.playSuccess();
+      const ared = Number(document.getElementById('logAredInput').value) || 90;
+      const missed = Number(document.getElementById('logMissedInput').value) || 0;
+      const fluid = Number(document.getElementById('logFluidShiftInput').value) || 2;
+      const sleep = Number(document.getElementById('logSleepInput').value) || 7.0;
+
+      const newLog = {
+        day: window.appState.inFlightHistory.length + 1,
+        daily_ared_load: ared,
+        missed_workouts: missed,
+        cephalad_fluid_shift_index: fluid,
+        sleep_duration: sleep,
+        timestamp: new Date().toISOString()
+      };
+
+      window.appState.inFlightHistory.push(newLog);
+      localStorage.setItem('astral_med_flight_logs', JSON.stringify(window.appState.inFlightHistory));
+
+      const badge = document.getElementById('logCountBadge');
+      if (badge) badge.innerText = `${window.appState.inFlightHistory.length} Days Logged`;
+      alert(`✅ Mission Day ${newLog.day} recorded! Handover bridge calibrated for Mode B.`);
+
+      refreshPostFlightMode();
+    };
+
+    // Mode Selector Controls & Instant Plan Generation
+    window.selectMissionMode = function(mode) {
+      window.setMode(mode);
+      window.closeOnboardingModal();
+      window.generateAndShowPlan(mode);
+    };
+
+    window.openPlanForCurrentMode = function() {
+      window.generateAndShowPlan(window.appState.mode);
+    };
+
+    window.setMode = function(mode) {
+      missionAudio.playBeep(mode === 'flight' ? 700 : 900);
+      window.appState.mode = mode;
+
+      // Ensure we are on home tab
+      window.switchPageTab('home');
+
+      const modeA = document.getElementById('modeAContainer');
+      const modeB = document.getElementById('modeBContainer');
+      const btnFlight = document.getElementById('toggleModeFlightBtn');
+      const btnRehab = document.getElementById('toggleModeRehabBtn');
+      const bannerText = document.getElementById('activeModeBannerText');
+
+      if (mode === 'flight') {
+        modeA.classList.remove('hidden');
+        modeB.classList.add('hidden');
+        btnFlight.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all bg-cyan-600 text-white shadow-md shadow-cyan-600/30";
+        btnRehab.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all text-slate-400 hover:text-white";
+        bannerText.className = "font-bold text-cyan-300 px-2.5 py-0.5 rounded bg-cyan-950 border border-cyan-800";
+        bannerText.innerHTML = "🛰️ MODE A: IN-FLIGHT MEDICAL CO-PILOT";
+      } else {
+        modeA.classList.add('hidden');
+        modeB.classList.remove('hidden');
+        btnRehab.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all bg-emerald-600 text-white shadow-md shadow-emerald-600/30";
+        btnFlight.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all text-slate-400 hover:text-white";
+        bannerText.className = "font-bold text-emerald-300 px-2.5 py-0.5 rounded bg-emerald-950 border border-emerald-800";
+        bannerText.innerHTML = "🌍 MODE B: EARTH PHYSIO & REHABILITATION";
+        refreshPostFlightMode();
+      }
+    };
+
+    // GENERATE AND DISPLAY PLAN FOR MODE A OR MODE B
+    window.generateAndShowPlan = function(mode) {
+      missionAudio.playSuccess();
+      const modal = document.getElementById('planGeneratedModal');
+      const tag = document.getElementById('planModalTypeTag');
+      const title = document.getElementById('planModalTitle');
+      const icon = document.getElementById('planModalIconBadge');
+      const body = document.getElementById('planModalBody');
+      const proceedBtn = document.getElementById('planModalProceedBtn');
+
+      if (mode === 'flight') {
+        tag.className = "text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold";
+        tag.innerText = "MODE A MISSION PLAN GENERATED";
+        title.innerText = "In-Flight Autonomous Countermeasure & Medical Plan";
+        icon.className = "w-12 h-12 rounded-xl bg-cyan-950 border border-cyan-500 flex items-center justify-center text-2xl text-cyan-300 shadow";
+        icon.innerText = "🛰️";
+        proceedBtn.className = "px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono font-bold text-xs shadow-lg shadow-cyan-600/30 flex items-center gap-2";
+        proceedBtn.innerHTML = "<span>Proceed to In-Flight Co-Pilot &rarr;</span>";
+
+        body.innerHTML = `
+          <!-- Flight Plan Overview Card -->
+          <div class="p-4 bg-space-850 rounded-xl border border-cyan-500/40">
+            <div class="flex items-center justify-between mb-2 font-mono">
+              <span class="text-white font-bold text-sm">Target Flight Phase: Expedition Day 42 (Microgravity)</span>
+              <span class="text-cyan-300 font-bold px-2 py-0.5 bg-cyan-950 rounded border border-cyan-800">NASA Medical Directive 44-A</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              Autonomous clinical countermeasure prescription to suppress cephalad fluid shifts, prevent internal jugular vein (IJV) stagnation/thrombosis, and arrest bone demineralization in zero gravity.
+            </p>
+          </div>
+
+          <!-- Structured Daily Schedule Protocol -->
+          <div class="space-y-2.5 font-mono">
+            <h4 class="font-bold text-white uppercase text-xs tracking-wider">Today's Prescribed Countermeasure Schedule:</h4>
+            
+            <div class="p-3 bg-space-850/80 rounded-lg border border-slate-800 flex items-start gap-3">
+              <span class="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 text-[11px] font-bold">07:00 MET</span>
+              <div>
+                <span class="text-white font-bold block">Circadian Awakening & Cephalad Edema Assessment</span>
+                <span class="text-slate-400 text-[11px]">Log facial edema grade (1-5) and resting heart rate. Adjust habitat SSLA light to 460nm blue spectrum.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-slate-800 flex items-start gap-3">
+              <span class="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 text-[11px] font-bold">08:30 MET</span>
+              <div>
+                <span class="text-white font-bold block">ARED Heavy Resistance Mechanical Loading (Block 1)</span>
+                <span class="text-slate-400 text-[11px]">Barbell back squats & heel raises (4 sets of 8 @ 85% 1RM). Minimum bone strain target: 1,800 microstrain to stimulate osteocytes.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-slate-800 flex items-start gap-3">
+              <span class="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 text-[11px] font-bold">11:00 MET</span>
+              <div>
+                <span class="text-white font-bold block">Lower Body Negative Pressure (LBNP) Venous Chuffing</span>
+                <span class="text-slate-400 text-[11px]">30-minute suction chamber session at -35 mmHg to displace 800mL of stagnant blood from head to lower limbs.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-slate-800 flex items-start gap-3">
+              <span class="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 text-[11px] font-bold">14:00 MET</span>
+              <div>
+                <span class="text-white font-bold block">Butterfly iQ+ Ultrasound Self-Surveillance Exam</span>
+                <span class="text-slate-400 text-[11px]">Internal Jugular Vein (IJV) Doppler cross-section scan & Transorbital Optic Nerve Sheath (ONSD) SANS check.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-slate-800 flex items-start gap-3">
+              <span class="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-800 text-[11px] font-bold">17:00 MET</span>
+              <div>
+                <span class="text-white font-bold block">T2 Treadmill Vibration-Isolated Aerobic Intervals</span>
+                <span class="text-slate-400 text-[11px]">35 mins HIIT interval running with bungee harness harness loading (75-85% peak VO2).</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        tag.className = "text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold";
+        tag.innerText = "MODE B RECONDITIONING PLAN GENERATED";
+        title.innerText = "Personalized 45-Day Earth Reconditioning & Rehabilitation Plan";
+        icon.className = "w-12 h-12 rounded-xl bg-emerald-950 border border-emerald-500 flex items-center justify-center text-2xl text-emerald-300 shadow";
+        icon.innerText = "🌍";
+        proceedBtn.className = "px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2";
+        proceedBtn.innerHTML = "<span>Proceed to Physio Coach &rarr;</span>";
+
+        const handover = ruleEngine ? ruleEngine.calculateHandoverMetrics(window.appState.inFlightHistory, null, window.appState.missionPreset) : {
+          predictedMuscleAtrophyPercent: 17.8,
+          predictedBoneLossPercent: 5.4,
+          orthostaticRiskScore: 72,
+          vestibularDisruptionScore: 81
+        };
+
+        body.innerHTML = `
+          <!-- Recovery Prescription Overview Card -->
+          <div class="p-4 bg-space-850 rounded-xl border border-emerald-500/40">
+            <div class="flex items-center justify-between mb-2 font-mono">
+              <span class="text-white font-bold text-sm">Mission Handover: ${handover.presetName || 'Standard ISS (180 Days)'}</span>
+              <span class="text-emerald-300 font-bold px-2 py-0.5 bg-emerald-950 rounded border border-emerald-800">NASA JSC APTP Protocol</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono mt-3">
+              <div class="bg-space-900 p-2 rounded border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">Atrophy Deficit:</span>
+                <span class="text-rose-400 font-bold">${handover.predictedMuscleAtrophyPercent}%</span>
+              </div>
+              <div class="bg-space-900 p-2 rounded border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">Bone Loss:</span>
+                <span class="text-amberAlert font-bold">${handover.predictedBoneLossPercent}% BMD</span>
+              </div>
+              <div class="bg-space-900 p-2 rounded border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">Orthostatic Risk:</span>
+                <span class="text-amberAlert font-bold">${handover.orthostaticRiskScore} / 100</span>
+              </div>
+              <div class="bg-space-900 p-2 rounded border border-slate-800">
+                <span class="text-slate-400 block text-[10px]">Vestibular Lag:</span>
+                <span class="text-rose-400 font-bold">${handover.vestibularDisruptionScore} / 100</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3-Phase Plan Roadmap -->
+          <div class="space-y-2.5 font-mono">
+            <h4 class="font-bold text-white uppercase text-xs tracking-wider">45-Day Phased Recovery Trajectory:</h4>
+            
+            <div class="p-3 bg-space-850/80 rounded-lg border border-cyan-800/60">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-cyan-300 font-bold">Phase 1: Days R+0 to R+7 &mdash; Stabilization & Orthostatic Tolerance</span>
+                <span class="text-[10px] bg-cyan-950 px-2 py-0.5 rounded text-cyan-300">ACTIVE STAGE</span>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed">
+                Supine / 45° recumbent cycling, vestibulo-ocular reflex (VOR x1) gaze fixation drills, and diaphragmatic core bracing. Prevents syncope upon standing.
+              </p>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-emerald-800/60">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-emerald-300 font-bold">Phase 2: Days R+8 to R+21 &mdash; Strength & Aquatic Hydrotherapy</span>
+                <span class="text-[10px] bg-emerald-950 px-2 py-0.5 rounded text-emerald-300">UPCOMING</span>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed">
+                Submerged chest-deep aquatic treadmill running (buoyancy deloading), low-impact rowing ergometer, and banded Romanian deadlifts (RDL).
+              </p>
+            </div>
+
+            <div class="p-3 bg-space-850/80 rounded-lg border border-blue-800/60">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-blue-300 font-bold">Phase 3: Days R+22 to R+45 &mdash; Full Earth Readiness & Impact Loading</span>
+                <span class="text-[10px] bg-blue-950 px-2 py-0.5 rounded text-blue-300">FINAL CLEARANCE</span>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed">
+                Overground track running, multi-directional agility ladders, barbell trap-bar deadlifts, and 100% pre-flight Earth baseline re-certification.
+              </p>
+            </div>
+          </div>
+
+          <!-- Safety Stop Notice -->
+          <div class="p-3 bg-amber-950/20 border border-amber-800/80 rounded-lg text-amber-200 text-xs">
+            <span class="font-bold">⚠️ Automatic Safety Stop Rule:</span> If dizziness exceeds 4/10 or joint pain exceeds 5/10 during today's workout, immediately halt standing drills and rest in 30° recumbent position with 500mL electrolyte rehydration.
+          </div>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+    };
+
+    window.closePlanModal = function() {
+      document.getElementById('planGeneratedModal').classList.add('hidden');
+    };
+
+    window.openOnboardingModal = function() {
+      document.getElementById('onboardingModal').classList.remove('hidden');
+    };
+    window.closeOnboardingModal = function() {
+      document.getElementById('onboardingModal').classList.add('hidden');
+    };
+
+    window.openNasaModal = function() {
+      document.getElementById('nasaModal').classList.remove('hidden');
+    };
+    window.closeNasaModal = function() {
+      document.getElementById('nasaModal').classList.add('hidden');
+    };
+
+    window.toggleAudio = function() {
+      const isMuted = missionAudio.toggleMute();
+      document.getElementById('audioIcon').innerText = isMuted ? "🔇" : "🔊";
+    };
+
+    // Environment Change Handler
+    window.updateEnvironment = function(envKey) {
+      missionAudio.playBeep(650);
+      window.appState.environment = envKey;
+      const multiplier = window.appState.rulesData?.inFlight?.environmentMultipliers?.[envKey];
+      if (multiplier) {
+        document.getElementById('envNoticeText').innerHTML = 
+          `<strong>${multiplier.description}</strong> &mdash; Fluid shift risk: ${multiplier.fluidShiftRisk}x | Atrophy rate: ${multiplier.muscleAtrophyRatePerDay}%/day`;
+      }
+      runOfflineTriage();
+    };
+
+    // Select Active Subsystem Hotspot
+    window.selectSubsystem = function(subsystemKey) {
+      missionAudio.playBeep(850);
+      window.appState.activeSubsystem = subsystemKey;
+      document.getElementById('activeHotspotBadge').innerText = `Selected: ${subsystemKey.toUpperCase()}`;
+      renderSubsystemForm(subsystemKey);
+    };
+
+    // Render Subsystem Input Form
+    function renderSubsystemForm(subsystemKey) {
+      const sub = window.appState.rulesData?.inFlight?.subsystems?.[subsystemKey];
+      if (!sub) return;
+
+      document.getElementById('examCategoryTag').innerText = sub.examType.toUpperCase();
+      document.getElementById('examTitle').innerText = sub.name;
+      document.getElementById('examPlacementGuide').innerText = `${sub.probePlacement}. Examine target anatomy (${sub.targetAnatomy}). Compare real-time waveform with nominal baseline.`;
+
+      const container = document.getElementById('metricInputsContainer');
+      container.innerHTML = sub.metrics.map(m => {
+        let defaultVal = m.normalRange[1] ? (m.normalRange[0] + m.normalRange[1]) / 2 : m.normalRange[0];
+        if (m.id === 'ijv_flow_velocity') defaultVal = 12;
+        return `
+          <div class="p-3 bg-space-850 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between text-xs font-mono mb-1">
+              <span class="text-slate-300 font-bold">${m.label}</span>
+              <span class="text-cyan-300 font-bold" id="val_${m.id}">${defaultVal} ${m.unit}</span>
+            </div>
+            <input type="range" 
+                   id="input_${m.id}" 
+                   min="${m.normalRange[0] * 0.4}" 
+                   max="${m.criticalThreshold * 1.6}" 
+                   step="${m.unit.includes('grade') || m.unit.includes('sessions') ? 1 : 0.1}" 
+                   value="${defaultVal}"
+                   oninput="document.getElementById('val_${m.id}').innerText = this.value + ' ${m.unit}'"
+                   class="w-full h-2 bg-slate-800 rounded appearance-none cursor-pointer accent-cyan-400">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+              <span>Nominal: ${m.normalRange[0]} - ${m.normalRange[1]} ${m.unit}</span>
+              <span class="text-rose-400">Critical: &gt; ${m.criticalThreshold}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      runOfflineTriage();
+    }
+
+    // Run 100% Offline Rule Engine Triage
+    window.runOfflineTriage = function() {
+      if (!ruleEngine || !window.appState.rulesData) return;
+
+      const subKey = window.appState.activeSubsystem;
+      const sub = window.appState.rulesData.inFlight.subsystems[subKey];
+      const metrics = {};
+
+      sub.metrics.forEach(m => {
+        const input = document.getElementById(`input_${m.id}`);
+        if (input) metrics[m.id] = Number(input.value);
+      });
+
+      const result = ruleEngine.evaluateSubsystem(subKey, metrics, window.appState.environment);
+
+      if (result.level === 'RED') missionAudio.playSafetyStop();
+      else if (result.level === 'AMBER') missionAudio.playWarning();
+      else missionAudio.playBeep(1000);
+
+      const resultBox = document.getElementById('triageResultBox');
+      const badge = document.getElementById('triageBadge');
+      const title = document.getElementById('resultTitle');
+      const action = document.getElementById('resultAction');
+      const priority = document.getElementById('resultPriority');
+      const timestamp = document.getElementById('resultTimestamp');
+
+      title.innerText = result.title;
+      action.innerText = result.clinicalAction;
+      priority.innerText = result.telemedicinePriority;
+      timestamp.innerText = `Evaluated: ${new Date().toLocaleTimeString()} (100% Offline Engine)`;
+
+      if (result.level === 'RED') {
+        badge.className = "px-3 py-1 rounded text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50";
+        badge.innerText = "STATUS: CRITICAL (RED)";
+        resultBox.className = "mt-4 p-4 rounded-xl border bg-rose-950/20 border-rose-800 text-xs text-rose-200";
+      } else if (result.level === 'AMBER') {
+        badge.className = "px-3 py-1 rounded text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50";
+        badge.innerText = "STATUS: PRECAUTION (AMBER)";
+        resultBox.className = "mt-4 p-4 rounded-xl border bg-amber-950/20 border-amber-800/80 text-xs text-amber-200";
+      } else {
+        badge.className = "px-3 py-1 rounded text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50";
+        badge.innerText = "STATUS: NOMINAL (GREEN)";
+        resultBox.className = "mt-4 p-4 rounded-xl border bg-emerald-950/20 border-emerald-800/80 text-xs text-emerald-200";
+      }
+
+      updateHotspotVisual(subKey, result.level);
+    };
+
+    function updateHotspotVisual(subKey, level) {
+      const colorMap = { GREEN: '#10B981', AMBER: '#F59E0B', RED: '#EF4444' };
+      const color = colorMap[level] || '#10B981';
+
+      const circle = document.getElementById(`circle_${subKey}`);
+      if (circle) {
+        circle.setAttribute('stroke', color);
+        circle.setAttribute('fill', `${color}33`);
+      }
+
+      if (subKey === 'cardiovascular') document.getElementById('legendCardio').innerText = level;
+      if (subKey === 'ocular_sans') document.getElementById('legendOcular').innerText = level;
+      if (subKey === 'musculoskeletal') document.getElementById('legendMusculo').innerText = level;
+      if (subKey === 'mood_sleep') document.getElementById('legendSleep').innerText = level;
+    }
+
+    // Sample Case Loader for Judges & Demonstrations
+    window.loadSampleCase = function(caseType) {
+      missionAudio.playBeep(720);
+      const subKey = window.appState.activeSubsystem;
+      if (subKey === 'cardiovascular') {
+        if (caseType === 'nominal') {
+          setInputValue('input_ijv_flow_velocity', 26);
+          setInputValue('input_cephalad_fluid_shift_index', 2);
+          setInputValue('input_resting_heart_rate', 65);
+        } else if (caseType === 'amber') {
+          setInputValue('input_ijv_flow_velocity', 11);
+          setInputValue('input_cephalad_fluid_shift_index', 3);
+          setInputValue('input_resting_heart_rate', 78);
+        } else {
+          setInputValue('input_ijv_flow_velocity', 4.1);
+          setInputValue('input_cephalad_fluid_shift_index', 4);
+          setInputValue('input_resting_heart_rate', 105);
+        }
+      } else if (subKey === 'ocular_sans') {
+        if (caseType === 'nominal') {
+          setInputValue('input_onsd_diameter', 4.9);
+          setInputValue('input_visual_acuity_change', 0.2);
+          setInputValue('input_frisen_papilledema_grade', 0);
+        } else if (caseType === 'amber') {
+          setInputValue('input_onsd_diameter', 5.8);
+          setInputValue('input_visual_acuity_change', 0.7);
+          setInputValue('input_frisen_papilledema_grade', 1);
+        } else {
+          setInputValue('input_onsd_diameter', 6.4);
+          setInputValue('input_visual_acuity_change', 1.8);
+          setInputValue('input_frisen_papilledema_grade', 3);
+        }
+      }
+      runOfflineTriage();
+    };
+
+    function setInputValue(id, val) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+        const valLabel = document.getElementById(id.replace('input_', 'val_'));
+        if (valLabel) valLabel.innerText = `${val}`;
+      }
+    }
+
+    window.resetInFlightTelemetry = function() {
+      missionAudio.playSuccess();
+      loadSampleCase('nominal');
+    };
+
+    // NASA Open API DONKI Integration
+    async function renderNasaDonki() {
+      const container = document.getElementById('donkiEventsList');
+      const tag = document.getElementById('donkiDataSourceTag');
+      const statusDot = document.getElementById('nasaStatusDot');
+      const statusText = document.getElementById('nasaStatusText');
+
+      if (!container) return;
+      container.innerHTML = `<div class="text-slate-400 py-2">Querying space weather alerts...</div>`;
+
+      const result = await nasaService.fetchCMEEvents();
+      if (tag) tag.innerText = `SOURCE: ${result.source}`;
+      
+      if (statusDot && statusText) {
+        if (result.source === 'LIVE') {
+          statusDot.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
+          statusText.innerText = "DONKI: LIVE";
+        } else {
+          statusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+          statusText.innerText = "DONKI: OFFLINE-READY";
+        }
+      }
+
+      container.innerHTML = result.events.map(ev => {
+        const isCme = ev.activityID?.includes('CME');
+        const badgeColor = ev.radiationRiskLevel?.includes('ELEVATED') ? 'text-amber-400 border-amber-800' : 'text-cyan-300 border-cyan-800';
+        return `
+          <div class="p-3 bg-space-850 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span>${isCme ? '💥' : '☀️'}</span>
+                <span>${ev.activityID || 'NASA Radiation Event'}</span>
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-space-900 border ${badgeColor}">
+                ${ev.radiationRiskLevel || 'MONITORED'}
+              </span>
+            </div>
+            <p class="text-slate-300 text-[11px] leading-relaxed mb-1.5">${ev.note}</p>
+            <div class="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-800">
+              <span>Instrument: ${ev.instruments?.[0]?.displayName || 'GOES/SOHO'}</span>
+              <span class="text-amberAlert">Advisory: ${ev.evaAdvisory || 'Nominal Shelter'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.syncNasaDonkiLive = function() {
+      missionAudio.playBeep(800);
+      renderNasaDonki();
+    };
+
+    window.saveAndTestNasaKey = function() {
+      const key = document.getElementById('nasaApiKeyInput').value;
+      nasaService.setApiKey(key);
+      window.closeNasaModal();
+      renderNasaDonki();
+      alert(`NASA API Key updated to: ${key}`);
+    };
+
+    // Mode B: Post-Flight Handover & Rehab Engine
+    window.updateMissionPreset = function(presetId) {
+      missionAudio.playBeep(750);
+      window.appState.missionPreset = presetId;
+      refreshPostFlightMode();
+    };
+
+    window.onTimelineChange = function(day) {
+      window.appState.currentTimelineDay = Number(day);
+      document.getElementById('dayIndicatorBadge').innerText = `Day R+${day}`;
+      refreshPostFlightMode();
+    };
+
+    window.onSymptomChange = function() {
+      const dizzy = Number(document.getElementById('dizzinessSlider').value);
+      const pain = Number(document.getElementById('painSlider').value);
+      window.appState.dizzinessScore = dizzy;
+      window.appState.painScore = pain;
+
+      document.getElementById('dizzinessValText').innerText = `${dizzy} / 10`;
+      document.getElementById('painValText').innerText = `${pain} / 10`;
+
+      evaluateSafetyStops();
+    };
+
+    function evaluateSafetyStops() {
+      if (!ruleEngine) return;
+      const safety = ruleEngine.evaluateSafetyStop(window.appState.painScore, window.appState.dizzinessScore);
+
+      const pill = document.getElementById('safetyStatusPill');
+      const banner = document.getElementById('safetyStopAlertBanner');
+      const card = document.getElementById('safetyStopCard');
+
+      if (!pill || !banner || !card) return;
+
+      if (safety.haltRequired) {
+        missionAudio.playSafetyStop();
+        pill.className = "text-xs font-mono font-bold px-2.5 py-0.8 rounded bg-rose-950 text-rose-300 border border-rose-800 animate-pulse";
+        pill.innerText = "HALT: SAFETY STOP TRIGGERED";
+        banner.className = "p-3 bg-rose-950/30 rounded-xl border border-rose-800 text-xs text-rose-200 flex items-start gap-2.5";
+        banner.innerHTML = `
+          <span class="text-lg">🛑</span>
+          <div>
+            <span class="font-bold text-rose-300 block">${safety.message}</span>
+            <span class="text-rose-200 mt-1 block">${safety.action}</span>
+          </div>
+        `;
+        card.className = "bg-space-900/90 border-2 border-rose-600 rounded-2xl p-5 shadow-lg shadow-rose-900/40";
+      } else if (safety.level === 'AMBER') {
+        missionAudio.playWarning();
+        pill.className = "text-xs font-mono font-bold px-2.5 py-0.8 rounded bg-amber-950 text-amber-300 border border-amber-800";
+        pill.innerText = "PRECAUTION: INTENSITY SCALED";
+        banner.className = "p-3 bg-amber-950/30 rounded-xl border border-amber-800 text-xs text-amber-200 flex items-start gap-2.5";
+        banner.innerHTML = `
+          <span class="text-lg">⚠️</span>
+          <div>
+            <span class="font-bold text-amber-300 block">${safety.message}</span>
+            <span class="text-amber-200 mt-1 block">${safety.action}</span>
+          </div>
+        `;
+        card.className = "bg-space-900/90 border-2 border-amber-600 rounded-2xl p-5 shadow-lg";
+      } else {
+        pill.className = "text-xs font-mono font-bold px-2.5 py-0.8 rounded bg-emerald-950 text-emerald-300 border border-emerald-800";
+        pill.innerText = "STATUS: SAFE TO TRAIN";
+        banner.className = "p-3 bg-space-850 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5";
+        banner.innerHTML = `
+          <span>✅</span>
+          <div>
+            <span class="font-bold text-white block">Physiological parameters nominal.</span>
+            <span class="text-slate-400">Full 2-hour exercise prescription authorized for today's reconditioning block.</span>
+          </div>
+        `;
+        card.className = "bg-space-900/90 border-2 border-slate-800 rounded-2xl p-5 shadow-lg";
+      }
+    }
+
+    function refreshPostFlightMode() {
+      if (!ruleEngine || !window.appState.rulesData) return;
+
+      const day = window.appState.currentTimelineDay;
+      const presetId = window.appState.missionPreset;
+      const history = window.appState.inFlightHistory;
+
+      const handover = ruleEngine.calculateHandoverMetrics(history, null, presetId);
+      document.getElementById('statMuscleAtrophy').innerText = `${handover.predictedMuscleAtrophyPercent}%`;
+      document.getElementById('statBoneLoss').innerText = `${handover.predictedBoneLossPercent}%`;
+      document.getElementById('statOrthoRisk').innerText = `${handover.orthostaticRiskScore} / 100`;
+      document.getElementById('statVestibularScore').innerText = `${handover.vestibularDisruptionScore} / 100`;
+
+      document.getElementById('handoverTitle').innerText = `Automatic Handover Loaded: ${handover.presetName}`;
+      document.getElementById('handoverSubtitle').innerText = `Mission Duration: ${handover.missionDurationDays} Days | In-Flight Logs Imported: ${history.length} Days`;
+
+      const readiness = ruleEngine.calculateEarthReadiness(day, handover, window.appState.completedSessionsCount);
+      document.getElementById('readinessPercentText').innerText = `${readiness.overallReadinessPercent}%`;
+      document.getElementById('readinessProgressBar').style.width = `${readiness.overallReadinessPercent}%`;
+      document.getElementById('readinessGradeBadge').innerText = readiness.gradeLabel;
+      document.getElementById('readinessGradeBadge').style.borderColor = readiness.gradeColor;
+
+      document.getElementById('barVo2').style.width = `${readiness.vo2maxRecoveryPercent}%`;
+      document.getElementById('barVo2Text').innerText = `${readiness.vo2maxRecoveryPercent}%`;
+      document.getElementById('barVestibular').style.width = `${readiness.vestibularRecoveryPercent}%`;
+      document.getElementById('barVestibularText').innerText = `${readiness.vestibularRecoveryPercent}%`;
+      document.getElementById('barOrtho').style.width = `${readiness.orthostaticTolerancePercent}%`;
+      document.getElementById('barOrthoText').innerText = `${readiness.orthostaticTolerancePercent}%`;
+
+      const phases = window.appState.rulesData.postFlight.phases;
+      const activePhase = phases.find(p => day >= p.startDay && day <= p.endDay) || phases[0];
+      window.appState.currentPhase = activePhase.phaseId;
+
+      document.getElementById('currentPhaseLabel').innerText = `${activePhase.name} (${activePhase.dayRange})`;
+      document.getElementById('phaseThemeText').innerText = `Focus: ${activePhase.theme}`;
+      
+      const phaseIcons = { 1: '🚴', 2: '🏊', 3: '🏃' };
+      document.getElementById('phaseIcon').innerText = phaseIcons[activePhase.phaseId] || '🏃';
+
+      renderExercises(activePhase.exercises);
+      evaluateSafetyStops();
+    }
+
+    function renderExercises(exercises) {
+      const container = document.getElementById('exerciseCardsList');
+      if (!container) return;
+
+      container.innerHTML = exercises.map(ex => {
+        const isDone = window.appState.completedExercises.has(ex.id);
+        return `
+          <div class="p-4 bg-space-850 rounded-xl border ${isDone ? 'border-emerald-600/70 bg-emerald-950/10' : 'border-slate-800'} transition-all">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div class="flex items-start gap-2.5">
+                <input type="checkbox" 
+                       id="check_${ex.id}" 
+                       ${isDone ? 'checked' : ''} 
+                       onchange="toggleExercise('${ex.id}')"
+                       class="mt-1 w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-700 cursor-pointer accent-emerald-500">
+                <div>
+                  <h4 class="font-bold text-white text-sm ${isDone ? 'line-through text-slate-400' : ''}">${ex.name}</h4>
+                  <div class="flex flex-wrap items-center gap-2 text-xs font-mono text-cyan-300 mt-0.5">
+                    <span>⏱️ ${ex.duration}</span>
+                    <span>•</span>
+                    <span>🔁 ${ex.reps}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-space-900 border border-slate-700 text-slate-300">
+                ${ex.targetMuscles[0] || 'Core'}
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed pl-6 mb-2">${ex.instructions}</p>
+            <div class="pl-6 text-[11px] font-mono text-amberAlert flex items-center gap-1.5">
+              <span>⚠️ Safety Limit:</span>
+              <span class="text-slate-400">${ex.safetyLimit}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateExerciseProgress();
+    }
+
+    window.toggleExercise = function(exId) {
+      missionAudio.playBeep(880);
+      if (window.appState.completedExercises.has(exId)) {
+        window.appState.completedExercises.delete(exId);
+      } else {
+        window.appState.completedExercises.add(exId);
+      }
+      updateExerciseProgress();
+    };
+
+    function updateExerciseProgress() {
+      const count = window.appState.completedExercises.size;
+      const progressEl = document.getElementById('sessionProgressText');
+      if (progressEl) progressEl.innerText = `${count} / 4 Completed`;
+    }
+
+    window.completeCurrentSession = function() {
+      missionAudio.playSuccess();
+      window.appState.completedSessionsCount++;
+      window.appState.completedExercises.clear();
+      refreshPostFlightMode();
+      alert("🎉 2-Hour Reconditioning Block Completed! Earth Readiness bonus awarded.");
+    };
+
+    // Initialize on window load
+    window.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
+  </script>
+</body>
+</html>

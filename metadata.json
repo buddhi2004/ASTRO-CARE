@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix Remix Remix OmniSync Mobile",
+  "description": "Seamlessly extend your desktop experience to all your mobile devices with perfect synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

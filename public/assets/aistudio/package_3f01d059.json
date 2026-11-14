@@ -1,0 +1,21 @@
+{
+  "name": "astral-med",
+  "version": "2.4.0",
+  "description": "ASTRAL-MED: Autonomous Dual-Mode Astronaut Health Co-Pilot & 45-Day Earth Reconditioning Coach for NASA Space Apps Challenge 2026",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/test-rule-engine.js",
+    "start": "python server.py"
+  },
+  "keywords": [
+    "nasa-space-apps-2026",
+    "offline-first",
+    "astronaut-health",
+    "sans",
+    "jugular-vein-thrombosis",
+    "reconditioning",
+    "dual-mode-mission"
+  ],
+  "author": "Udamgie (AI/ML), Rashmi (Frontend), Buddhiprabha (Delivery Lead), Vidasni (Web Dev)",
+  "license": "MIT"
+}
